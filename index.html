@@ -331,7 +331,7 @@ main { max-width: 1240px; margin: 0 auto; padding: 22px 20px 80px; }
         <button class="tab" data-view="counter">克制查询</button>
         <button class="tab" data-view="aram">海克斯大乱斗</button>
         <button class="tab" data-view="augment">海克斯强化</button>
-        <button class="tab" data-view="tier">强度榜</button>
+        <button class="tab" data-view="tier">强度榜·参考</button>
         <button class="tab" data-view="ranked">排位 BP</button>
       </nav>
       <div class="meta" id="meta">版本加载中…</div>
@@ -351,7 +351,7 @@ main { max-width: 1240px; margin: 0 auto; padding: 22px 20px 80px; }
 
     <!-- 克制查询 -->
     <section class="view" id="view-counter">
-      <p class="intro">选一个英雄，查看<b>它克制谁</b>（打谁强势）和<b>谁克制它</b>（被谁针对）。点头像可切换查询对象。克制数据为人工维护，覆盖主流对位。</p>
+      <p class="intro">选一个英雄，查看<b>它克制谁</b>（打谁强势）和<b>谁克制它</b>（被谁针对）。点头像可切换查询对象。<br><span style="color:var(--a)">⚠️ 克制关系为<b>人工整理的参考</b>，非实时统计；准确的版本克制请以游戏内 / 「掌上英雄联盟」App 为准。</span></p>
       <div class="toolbar">
         <div class="search"><input id="cntSearch" placeholder="搜英雄名 / 外号查询，如 剑魔 · 快乐风男…"></div>
         <div class="lanefilter" id="cntLanes"></div>
@@ -372,7 +372,7 @@ main { max-width: 1240px; margin: 0 auto; padding: 22px 20px 80px; }
 
     <!-- 强度榜 -->
     <section class="view" id="view-tier">
-      <p class="intro">英雄强度排行。<b>大乱斗榜</b>按大乱斗环境评级；<b>排位榜</b>可按分路看，为<b>人工整理的参考评级（非实时数据）</b>，仅供上分选人参考。点英雄看详情。</p>
+      <p class="intro">英雄强度排行。<br><span style="color:var(--a)">⚠️ 本榜为<b>作者人工整理的参考评级，不是实时胜率统计</b>，仅帮你大致判断强弱；<b>准确的版本强度请以游戏内 / 「掌上英雄联盟」官方 App 为准</b>。</span></p>
       <div class="lanefilter" id="tierMode" style="margin-bottom:10px"></div>
       <div class="lanefilter" id="tierLane" style="margin-bottom:16px"></div>
       <div id="tierList"></div>
@@ -1658,8 +1658,10 @@ function bindTeamSlots(root, teams, rerender, roles, pickerTitle) {
 
 // ---------- 启动 ----------
 document.querySelector("main").insertAdjacentHTML("beforeend",
-  `<div class="notice">英雄数据与头像来自 Riot 官方 Data Dragon（League of Legends 版权归 Riot Games）。
-   克制关系与大乱斗评级为人工整理，仅供参考，不代表官方数据，可能随版本变化。本工具不隶属于 Riot Games。</div>`);
+  `<div class="notice">
+   <b>✅ 官方数据（准确）</b>：英雄名称、技能、面板属性、皮肤、符文名、强化效果——来自腾讯国服官方（game.gtimg.cn）与 Riot 官方数据。<br>
+   <b>⚠️ 人工参考（非官方）</b>：克制关系、强度榜、符文/强化推荐——为作者人工整理的参考，不代表实时数据，会随版本变化；<b>追求准确的实时强度/克制，请以游戏内或「掌上英雄联盟」官方 App 为准</b>。<br>
+   League of Legends 版权归 Riot Games，本工具不隶属于 Riot Games / 腾讯。</div>`);
 $("libGrid").innerHTML = `<div class="loading"><div class="spinner"></div>正在从官方服务器加载英雄数据…</div>`;
 boot();
 
