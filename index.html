@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOL 英雄克制 · 阵容对比助手</title>
+  <style>
+:root {
+  --bg: #0a0e14;
+  --bg2: #10161f;
+  --panel: #141c28;
+  --panel2: #1a2432;
+  --border: #253244;
+  --gold: #c8aa6e;
+  --gold2: #f0e6d2;
+  --blue: #0ac8b9;
+  --blue-team: #3b82f6;
+  --red-team: #ef4444;
+  --text: #cdd6e4;
+  --text-dim: #7c8798;
+  --s: #ff4e50;
+  --a: #ff9a3c;
+  --b: #ffd24c;
+  --c: #7ed957;
+  --d: #5a9bd4;
+  --shadow: 0 8px 30px rgba(0,0,0,.45);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text);
+  font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; }
+body { min-height: 100vh; }
+a { color: inherit; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- Header ---------- */
+header {
+  position: sticky; top: 0; z-index: 50;
+  background: linear-gradient(180deg, #0c121b, #0a0e14);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+}
+.hwrap { max-width: 1240px; margin: 0 auto; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.logo { font-size: 20px; font-weight: 800; letter-spacing: .5px;
+  background: linear-gradient(90deg, var(--gold), #e8d5a3);
+  -webkit-background-clip: text; background-clip: text; color: transparent; white-space: nowrap; }
+.logo small { display: block; font-size: 11px; font-weight: 500; color: var(--text-dim);
+  -webkit-text-fill-color: var(--text-dim); letter-spacing: 0; }
+.tabs { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+.tab {
+  padding: 9px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;
+  color: var(--text-dim); border: 1px solid transparent; background: transparent; transition: .15s;
+}
+.tab:hover { color: var(--gold2); background: var(--panel); }
+.tab.active { color: #0a0e14; background: linear-gradient(90deg, var(--gold), #e8d5a3); border-color: var(--gold); }
+.meta { font-size: 11px; color: var(--text-dim); text-align: right; line-height: 1.5; }
+.meta b { color: var(--gold); }
+
+main { max-width: 1240px; margin: 0 auto; padding: 22px 20px 80px; }
+.view { display: none; animation: fade .25s; }
+.view.active { display: block; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Controls ---------- */
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+.search { flex: 1; min-width: 200px; position: relative; }
+.search input {
+  width: 100%; padding: 11px 14px 11px 38px; border-radius: 10px;
+  background: var(--panel); border: 1px solid var(--border); color: var(--text); font-size: 14px;
+}
+.search input:focus { outline: none; border-color: var(--gold); }
+.search::before { content: "🔍"; position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: .6; font-size: 13px; }
+.lanefilter { display: flex; gap: 6px; flex-wrap: wrap; }
+.lanebtn {
+  padding: 8px 13px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+  background: var(--panel); border: 1px solid var(--border); color: var(--text-dim); transition: .15s;
+}
+.lanebtn:hover { color: var(--gold2); }
+.lanebtn.active { background: var(--panel2); color: var(--gold); border-color: var(--gold); }
+
+/* ---------- Champion grid ---------- */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 10px; }
+.champ {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px 4px 7px; text-align: center; cursor: pointer; transition: .15s; position: relative;
+}
+.champ:hover { border-color: var(--gold); transform: translateY(-3px); background: var(--panel2); }
+.champ img { width: 60px; height: 60px; border-radius: 8px; display: block; margin: 0 auto 5px;
+  border: 1px solid var(--border); }
+.champ .cn { font-size: 12px; font-weight: 600; color: var(--gold2); line-height: 1.2;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.champ .en { font-size: 10px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tierbadge {
+  position: absolute; top: 5px; right: 5px; width: 18px; height: 18px; border-radius: 5px;
+  font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+  color: #0a0e14;
+}
+.t-S { background: var(--s); } .t-A { background: var(--a); } .t-B { background: var(--b); }
+.t-C { background: var(--c); } .t-D { background: var(--d); }
+.loading { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+.spinner { width: 34px; height: 34px; border: 3px solid var(--border); border-top-color: var(--gold);
+  border-radius: 50%; margin: 0 auto 14px; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.empty { text-align: center; padding: 40px; color: var(--text-dim); }
+
+/* ---------- Detail modal ---------- */
+.modal-bg { position: fixed; inset: 0; background: rgba(4,7,12,.78); z-index: 100;
+  display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto; }
+.modal-bg.show { display: flex; }
+.modal { background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+  max-width: 620px; width: 100%; box-shadow: var(--shadow); overflow: hidden; }
+.modal-head { display: flex; gap: 16px; align-items: center; padding: 22px; position: relative;
+  background: linear-gradient(135deg, var(--panel2), var(--panel)); border-bottom: 1px solid var(--border); }
+.modal-head img { width: 76px; height: 76px; border-radius: 12px; border: 2px solid var(--gold); }
+.modal-head h2 { font-size: 22px; color: var(--gold2); }
+.modal-head .en2 { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+.modal-head .roles { margin-top: 7px; display: flex; gap: 5px; flex-wrap: wrap; }
+.rolechip { font-size: 11px; padding: 3px 8px; border-radius: 6px; background: var(--bg2);
+  border: 1px solid var(--border); color: var(--text-dim); }
+.close { position: absolute; top: 14px; right: 16px; font-size: 22px; cursor: pointer;
+  color: var(--text-dim); background: none; border: none; }
+.close:hover { color: var(--gold2); }
+.modal-body { padding: 20px 22px 24px; }
+.sec-title { font-size: 13px; font-weight: 700; color: var(--gold); margin: 18px 0 10px;
+  letter-spacing: .5px; display: flex; align-items: center; gap: 8px; }
+.sec-title:first-child { margin-top: 0; }
+.sec-title .em { font-size: 15px; }
+.aram-row { display: flex; align-items: center; gap: 12px; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; }
+.aram-big { width: 44px; height: 44px; border-radius: 10px; font-size: 22px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; color: #0a0e14; }
+.aram-row .desc { font-size: 13px; color: var(--text); }
+.aram-row .desc small { display: block; color: var(--text-dim); font-size: 11px; margin-top: 2px; }
+.cnt-list { display: flex; gap: 8px; flex-wrap: wrap; }
+.cnt-chip { display: flex; align-items: center; gap: 7px; background: var(--bg2);
+  border: 1px solid var(--border); border-radius: 20px; padding: 4px 11px 4px 4px; cursor: pointer; transition: .15s; }
+.cnt-chip:hover { border-color: var(--gold); }
+.cnt-chip img { width: 28px; height: 28px; border-radius: 50%; }
+.cnt-chip span { font-size: 12px; color: var(--gold2); }
+.tagwrap { display: flex; gap: 6px; flex-wrap: wrap; }
+.tagpill { font-size: 11px; padding: 4px 10px; border-radius: 6px; background: var(--panel2);
+  border: 1px solid var(--border); color: var(--blue); }
+.nodata { color: var(--text-dim); font-size: 13px; font-style: italic; }
+
+/* ---------- Team / draft ---------- */
+.intro { color: var(--text-dim); font-size: 13px; margin-bottom: 16px; line-height: 1.6; }
+.teams { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.teampanel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+.teampanel.blue { border-top: 3px solid var(--blue-team); }
+.teampanel.red { border-top: 3px solid var(--red-team); }
+.teamhead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.teamhead h3 { font-size: 15px; }
+.teamhead.blue h3 { color: var(--blue-team); }
+.teamhead.red h3 { color: var(--red-team); }
+.teamhead .avg { font-size: 12px; color: var(--text-dim); }
+.slots { display: flex; flex-direction: column; gap: 8px; }
+.slot { display: flex; align-items: center; gap: 10px; background: var(--bg2);
+  border: 1px dashed var(--border); border-radius: 10px; padding: 7px 10px; min-height: 52px; cursor: pointer; transition: .15s; }
+.slot:hover { border-color: var(--gold); }
+.slot.filled { border-style: solid; cursor: default; }
+.slot img { width: 38px; height: 38px; border-radius: 8px; }
+.slot .role { font-size: 11px; color: var(--text-dim); width: 42px; flex-shrink: 0; font-weight: 600; }
+.slot .nm { flex: 1; font-size: 13px; color: var(--gold2); }
+.slot .nm small { color: var(--text-dim); font-size: 11px; display: block; }
+.slot .pick { flex: 1; color: var(--text-dim); font-size: 13px; }
+.slot .x { color: var(--text-dim); cursor: pointer; font-size: 16px; padding: 0 4px; }
+.slot .x:hover { color: var(--red-team); }
+.slot .tier-s { font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 5px; color: #0a0e14; }
+.teamctrl { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.btn { padding: 9px 15px; border-radius: 9px; border: 1px solid var(--border); background: var(--panel);
+  color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; transition: .15s; }
+.btn:hover { border-color: var(--gold); color: var(--gold2); }
+.btn.primary { background: linear-gradient(90deg, var(--gold), #e8d5a3); color: #0a0e14; border-color: var(--gold); }
+.btn.primary:hover { filter: brightness(1.08); }
+.counterhint { font-size: 11px; color: var(--c); margin-top: 3px; }
+.counterhint.bad { color: var(--a); }
+
+/* ---------- Comparison ---------- */
+.compare { background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px; margin-top: 18px; }
+.compare h3 { font-size: 15px; color: var(--gold); margin-bottom: 16px; }
+.cmp-row { display: grid; grid-template-columns: 1fr 120px 1fr; align-items: center; gap: 10px; margin-bottom: 9px; }
+.cmp-label { text-align: center; font-size: 12px; color: var(--text-dim); font-weight: 600; }
+.cmp-bar { height: 16px; border-radius: 4px; background: var(--bg2); position: relative; overflow: hidden; }
+.cmp-bar.left { direction: rtl; }
+.cmp-bar i { position: absolute; top: 0; bottom: 0; display: block; }
+.cmp-bar.left i { right: 0; background: linear-gradient(90deg, transparent, var(--blue-team)); }
+.cmp-bar.right i { left: 0; background: linear-gradient(90deg, var(--red-team), transparent); }
+.cmp-val { font-size: 11px; color: var(--text); width: 22px; }
+.verdict { margin-top: 18px; padding: 14px 16px; border-radius: 10px; background: var(--bg2);
+  border: 1px solid var(--border); font-size: 13px; line-height: 1.7; }
+.verdict b.blue { color: var(--blue-team); }
+.verdict b.red { color: var(--red-team); }
+.verdict .tag { color: var(--gold); }
+
+/* picker overlay */
+.picker-bg { position: fixed; inset: 0; background: rgba(4,7,12,.8); z-index: 110; display: none;
+  flex-direction: column; align-items: center; padding: 30px 16px; }
+.picker-bg.show { display: flex; }
+.picker-box { background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+  max-width: 900px; width: 100%; max-height: 86vh; display: flex; flex-direction: column; box-shadow: var(--shadow); }
+.picker-top { padding: 16px 18px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
+.picker-top h3 { font-size: 15px; color: var(--gold); white-space: nowrap; }
+.picker-top input { flex: 1; padding: 9px 12px; border-radius: 8px; background: var(--bg2);
+  border: 1px solid var(--border); color: var(--text); }
+.picker-top input:focus { outline: none; border-color: var(--gold); }
+.picker-grid { padding: 16px 18px; overflow-y: auto;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; }
+.notice { font-size: 12px; color: var(--text-dim); text-align: center; margin-top: 30px;
+  padding-top: 18px; border-top: 1px solid var(--border); line-height: 1.7; }
+
+/* ---------- 外号 ---------- */
+.aka { font-size: 12px; color: var(--blue); margin-top: 4px; }
+
+/* ---------- 符文推荐 ---------- */
+.rune-tag { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
+.rune-tag b { color: var(--gold); }
+.rune-reco { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.rune-col { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.rune-col.primary { border-color: #3a3322; background: linear-gradient(180deg, #171308, var(--bg2)); }
+.rune-tree { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700;
+  color: var(--gold); margin-bottom: 10px; }
+.rune-tree img { width: 20px; height: 20px; }
+.rune { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+.rune img { width: 26px; height: 26px; border-radius: 50%; background: #05080d; flex-shrink: 0; }
+.rune .rt { font-size: 12px; color: var(--text); }
+.rune.ks { padding: 6px 8px; margin-bottom: 8px; background: rgba(200,170,110,.08);
+  border: 1px solid #3a3322; border-radius: 9px; }
+.rune.ks img { width: 40px; height: 40px; }
+.rune.ks .rt { font-size: 14px; font-weight: 700; color: var(--gold2); }
+.rune-minors { display: flex; flex-direction: column; gap: 2px; }
+.rune-shards { margin-top: 10px; padding-top: 9px; border-top: 1px dashed var(--border);
+  font-size: 12px; color: var(--text); }
+.rune-shards span { display: block; color: var(--text-dim); font-size: 11px; margin-bottom: 3px; }
+
+@media (max-width: 560px) { .rune-reco { grid-template-columns: 1fr; } }
+
+/* ---------- 海克斯强化 ---------- */
+.aug-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.aug-count { grid-column: 1 / -1; font-size: 12px; color: var(--text-dim); }
+.aug { background: var(--panel); border: 1px solid var(--border); border-left-width: 3px;
+  border-radius: 10px; padding: 11px 12px; }
+.aug-top { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+.aug-top img { width: 40px; height: 40px; border-radius: 8px; background: #05080d; flex-shrink: 0; }
+.aug-nm { font-size: 13px; font-weight: 700; color: var(--gold2); line-height: 1.25; }
+.aug-rr { font-size: 11px; margin-top: 2px; }
+.aug-desc { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+.r-silver { border-left-color: #9aa7b5; } .r-silver .aug-rr { color: #9aa7b5; }
+.r-gold   { border-left-color: #f0c060; } .r-gold .aug-rr { color: #f0c060; }
+.r-prism  { border-left-color: #c874ff; } .r-prism .aug-rr { color: #c874ff; }
+
+.aug-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.aug.mini { display: flex; align-items: center; gap: 7px; padding: 4px 10px 4px 5px;
+  border-radius: 20px; border-left-width: 1px; cursor: default; }
+.aug.mini img { width: 26px; height: 26px; border-radius: 50%; background: #05080d; }
+.aug.mini .aug-nm { font-size: 12px; }
+.aug.mini.r-silver { border-color: #4a545f; } .aug.mini.r-gold { border-color: #5c5330; }
+.aug.mini.r-prism { border-color: #5a3a73; }
+
+/* ---------- 强度榜 ---------- */
+.tier-row { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+.tier-badge { width: 42px; height: 42px; flex-shrink: 0; border-radius: 10px; font-size: 21px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; color: #0a0e14; }
+.tier-champs { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
+.rolechip.rk { color: #0a0e14; font-weight: 700; border: none; }
+
+/* ---------- 筛选小按钮 ---------- */
+.lanebtn.sm { padding: 6px 11px; font-size: 12px; }
+.flt-sep { display: inline-block; width: 1px; align-self: stretch; background: var(--border); margin: 2px 3px; }
+
+/* ---------- 弹窗原画头 ---------- */
+.modal-head.with-splash { position: relative; overflow: hidden; }
+.head-splash { position: absolute; inset: 0; background-size: cover; background-position: center 22%; opacity: .45; }
+.modal-head.with-splash::after { content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(20,28,40,.35), rgba(20,28,40,.92)); }
+.head-portrait { position: relative; z-index: 2; width: 76px; height: 76px; border-radius: 12px; border: 2px solid var(--gold); }
+.head-info { position: relative; z-index: 2; }
+.modal-head .close { z-index: 3; }
+.rolechip.dmg-AD { color: #ff9a7a; border-color: #5a3a2e; }
+.rolechip.dmg-AP { color: #7ab8ff; border-color: #2e3f5a; }
+.rolechip.dmg-TANK { color: #9bd27e; border-color: #3a5a2e; }
+
+/* ---------- 面板 / 难度 ---------- */
+.stat-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.stat-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; margin-bottom: 12px; }
+.stat-row { display: flex; align-items: center; gap: 8px; }
+.stat-l { font-size: 12px; color: var(--text-dim); width: 30px; flex-shrink: 0; }
+.stat-bar { flex: 1; height: 8px; border-radius: 4px; background: #05080d; overflow: hidden; }
+.stat-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--blue), var(--gold)); }
+.stat-v { font-size: 11px; color: var(--text); width: 14px; }
+.base-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-top: 10px; border-top: 1px dashed var(--border); }
+.base-cell { font-size: 12px; color: var(--text-dim); display: flex; flex-direction: column; gap: 2px; }
+.base-cell b { color: var(--gold2); font-size: 15px; }
+
+/* ---------- 技能 ---------- */
+.skill { display: flex; gap: 11px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.skill:last-child { border-bottom: none; }
+.skill-ic { position: relative; flex-shrink: 0; }
+.skill-ic img { width: 44px; height: 44px; border-radius: 9px; border: 1px solid var(--border); background: #05080d; }
+.kb { position: absolute; bottom: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 3px; font-size: 11px;
+  font-weight: 800; color: #0a0e14; background: var(--gold); border-radius: 5px; display: flex; align-items: center; justify-content: center; }
+.kb.pas { background: var(--blue); color: #04242a; }
+.skill-nm { font-size: 13px; font-weight: 700; color: var(--gold2); margin-bottom: 3px; }
+.skill-nm small { color: var(--text-dim); font-weight: 400; margin-left: 7px; font-size: 11px; }
+.skill-ds { font-size: 12px; color: var(--text-dim); line-height: 1.55; }
+
+/* ---------- 皮肤 ---------- */
+.skins { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.skin { border: 1px solid var(--border); border-radius: 9px; overflow: hidden; background: var(--bg2); }
+.skin img { width: 100%; height: 78px; object-fit: cover; object-position: center 20%; display: block; }
+.skin img.fallback { object-fit: contain; background: #05080d; padding: 10px 0; }
+.skin span { display: block; font-size: 11px; color: var(--text-dim); padding: 5px 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 760px) {
+  .teams { grid-template-columns: 1fr; }
+  .cmp-row { grid-template-columns: 1fr 70px 1fr; }
+  .meta { display: none; }
+}
+
+</style>
+</head>
+<body>
+  <header>
+    <div class="hwrap">
+      <div class="logo">英雄对战助手<small>LOL · 克制 / 大乱斗 / 阵容</small></div>
+      <nav class="tabs" id="tabs">
+        <button class="tab active" data-view="library">英雄库</button>
+        <button class="tab" data-view="counter">克制查询</button>
+        <button class="tab" data-view="aram">海克斯大乱斗</button>
+        <button class="tab" data-view="augment">海克斯强化</button>
+        <button class="tab" data-view="tier">强度榜</button>
+        <button class="tab" data-view="ranked">排位 BP</button>
+      </nav>
+      <div class="meta" id="meta">版本加载中…</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- 英雄库 -->
+    <section class="view active" id="view-library">
+      <div class="toolbar">
+        <div class="search"><input id="libSearch" placeholder="搜英雄名 / 外号 / 英文，如 盖伦 · 剑魔 · 快乐风男 · Garen"></div>
+        <div class="lanefilter" id="libLanes"></div>
+      </div>
+      <div class="lanefilter" id="libExtra" style="margin:-6px 0 16px"></div>
+      <div id="libGrid" class="grid"></div>
+    </section>
+
+    <!-- 克制查询 -->
+    <section class="view" id="view-counter">
+      <p class="intro">选一个英雄，查看<b>它克制谁</b>（打谁强势）和<b>谁克制它</b>（被谁针对）。点头像可切换查询对象。克制数据为人工维护，覆盖主流对位。</p>
+      <div class="toolbar">
+        <div class="search"><input id="cntSearch" placeholder="搜英雄名 / 外号查询，如 剑魔 · 快乐风男…"></div>
+        <div class="lanefilter" id="cntLanes"></div>
+      </div>
+      <div id="cntGrid" class="grid"></div>
+    </section>
+
+    <!-- 大乱斗 -->
+    <section class="view" id="view-aram">
+      <p class="intro">海克斯/极地大乱斗阵容评估。随机或手动组两队，对比两边的<b>消耗 / 群伤 / 续航 / 前排</b>等强项，给出谁更吃香。评级基于大乱斗环境（远程消耗、AoE、续航英雄更强）。</p>
+      <div class="teamctrl">
+        <button class="btn primary" id="aramRoll">🎲 随机双方阵容</button>
+        <button class="btn" id="aramClear">清空</button>
+      </div>
+      <div class="teams" id="aramTeams"></div>
+      <div id="aramCompare"></div>
+    </section>
+
+    <!-- 强度榜 -->
+    <section class="view" id="view-tier">
+      <p class="intro">英雄强度排行。<b>大乱斗榜</b>按大乱斗环境评级；<b>排位榜</b>可按分路看，为<b>人工整理的参考评级（非实时数据）</b>，仅供上分选人参考。点英雄看详情。</p>
+      <div class="lanefilter" id="tierMode" style="margin-bottom:10px"></div>
+      <div class="lanefilter" id="tierLane" style="margin-bottom:16px"></div>
+      <div id="tierList"></div>
+    </section>
+
+    <!-- 海克斯强化图鉴 -->
+    <section class="view" id="view-augment">
+      <p class="intro">海克斯大乱斗 / 斗魂竞技场里对局中才能选到的<b>海克斯强化</b>全图鉴（官方图标 + 效果说明）。按稀有度、类型筛选，或搜名字。想看「某英雄适合哪些强化」，到<b>英雄库</b>点开英雄，详情里有「适合的海克斯强化」。</p>
+      <div class="toolbar">
+        <div class="search"><input id="augSearch" placeholder="搜强化名字，如 无限飞升 · 全知全能…"></div>
+      </div>
+      <div class="lanefilter" id="augRarity" style="margin-bottom:10px"></div>
+      <div class="lanefilter" id="augType" style="margin-bottom:16px"></div>
+      <div id="augGrid" class="aug-grid"></div>
+    </section>
+
+    <!-- 排位 BP -->
+    <section class="view" id="view-ranked">
+      <p class="intro">排位对局模拟：按分路给蓝/红双方选人。每次选人后，会提示<b>这个英雄在该路被谁克制</b>，帮你 BP 时避开或针对。下方对比两队阵容强项。</p>
+      <div class="teamctrl">
+        <button class="btn" id="rankClear">清空全部</button>
+      </div>
+      <div class="teams" id="rankTeams"></div>
+      <div id="rankCompare"></div>
+    </section>
+  </main>
+
+  <!-- 英雄详情弹窗 -->
+  <div class="modal-bg" id="modalBg">
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <!-- 选人弹窗 -->
+  <div class="picker-bg" id="pickerBg">
+    <div class="picker-box">
+      <div class="picker-top">
+        <h3 id="pickerTitle">选择英雄</h3>
+        <input id="pickerSearch" placeholder="搜索中文 / 英文名…">
+        <button class="close" id="pickerClose" style="position:static">×</button>
+      </div>
+      <div class="picker-grid" id="pickerGrid"></div>
+    </div>
+  </div>
+
+  <script>
+/*
+ * 内置策略数据（人工维护，可随时修改）
+ * 键名 = Data Dragon 英雄 ID，与官方完全一致
+ *
+ * 每个英雄字段：
+ *   lanes   : 常见分路  top/jungle/mid/adc/support
+ *   aram    : 大乱斗强度评级  S / A / B / C / D
+ *   tags    : 阵容特质标签（用于阵容对比），取值见下方 TAG_META
+ *   strong  : 该英雄「克制 / 强势对位」的英雄（打他们强）
+ *   weak    : 「克制该英雄」的英雄（被他们针对）
+ *
+ * 说明：strong / weak 以同分路对线为主。覆盖主流英雄，
+ *   未收录的英雄仍可从官方数据正常浏览，克制栏显示「数据完善中」。
+ *
+ * ★ 预留实时数据接口：若以后接入第三方实时数据，
+ *   只需把 window.LOL_LIVE 填成相同结构，app.js 会优先使用它。
+ */
+window.LOL_DATA = {
+  patch: "16.23.1",
+  updated: "2026-11-20",
+
+  // 阵容标签含义（用于「阵容对比」雷达 / 评分）
+  TAG_META: {
+    engage:    { label: "开团",   desc: "强开先手、强制接战" },
+    poke:      { label: "消耗",   desc: "远程 / 技能持续消耗" },
+    sustain:   { label: "续航",   desc: "回复 / 吸血 / 护盾" },
+    aoe:       { label: "群伤",   desc: "范围爆发 / 团战清场" },
+    dive:      { label: "突进",   desc: "切后排 / 近身爆发" },
+    peel:      { label: "保护",   desc: "护C / 解控 / 拉扯" },
+    cc:        { label: "控制",   desc: "硬控链、留人能力" },
+    scaling:   { label: "后期",   desc: "后期发力、滚雪球弱" },
+    burst:     { label: "爆发",   desc: "瞬间秒人能力" },
+    frontline: { label: "前排",   desc: "坦度 / 顶在最前" },
+    poke_res:  { label: "抗消耗", desc: "血厚 / 回复，耐久战强" },
+    splitpush: { label: "分推",   desc: "带线牵制、单带强" },
+    mobility:  { label: "机动",   desc: "位移多、灵活难抓" },
+  },
+
+  champ: {
+    // ========== 上单 TOP ==========
+    Aatrox:     { lanes:["top"], aram:"C", tags:["sustain","aoe","cc","dive"], strong:["Yone","Yasuo","Gragas","Sett","Mordekaiser"], weak:["Fiora","Gnar","Kayle","Vayne","Quinn","Renekton"] },
+    Camille:    { lanes:["top"], aram:"C", tags:["dive","splitpush","cc","burst"], strong:["Yasuo","Nasus","Sett","Mordekaiser"], weak:["Darius","Jax","Quinn","Malphite"] },
+    Darius:     { lanes:["top"], aram:"B", tags:["sustain","cc","frontline","dive"], strong:["Fiora","Riven","Camille","Sett","Nasus"], weak:["Vayne","Quinn","Kayle","Gnar","Teemo"] },
+    DrMundo:    { lanes:["top","jungle"], aram:"A", tags:["sustain","frontline","poke_res","splitpush"], strong:["Darius","Garen","Sett","Illaoi"], weak:["Vayne","Fiora","Gwen","Gangplank"] },
+    Fiora:      { lanes:["top"], aram:"D", tags:["splitpush","dive","sustain","burst"], strong:["Nasus","Darius","Garen","Sett","Malphite"], weak:["Gnar","Jax","Poppy","Quinn","Pantheon"] },
+    Gangplank:  { lanes:["top"], aram:"C", tags:["poke","splitpush","aoe","scaling"], strong:["Nasus","Mordekaiser","Sett","Yorick"], weak:["Renekton","Pantheon","Irelia","Darius"] },
+    Garen:      { lanes:["top"], aram:"C", tags:["frontline","dive","sustain","burst"], strong:["Teemo","Vladimir","Kennen","Yasuo"], weak:["Darius","Fiora","Quinn","Vayne","Cassiopeia"] },
+    Gnar:       { lanes:["top"], aram:"B", tags:["poke","cc","aoe","engage"], strong:["Darius","Aatrox","Renekton","Sett","Garen"], weak:["Yone","Irelia","Wukong","Fiora"] },
+    Gwen:       { lanes:["top","jungle"], aram:"B", tags:["sustain","splitpush","dive","burst"], strong:["DrMundo","Nasus","Darius","Malphite","Ornn"], weak:["Fiora","Jax","Camille","Riven"] },
+    Illaoi:     { lanes:["top"], aram:"B", tags:["sustain","aoe","cc","frontline"], strong:["Nasus","Sett","Garen","Mordekaiser"], weak:["Fiora","Vayne","Gnar","Quinn","Camille"] },
+    Irelia:     { lanes:["top","mid"], aram:"C", tags:["dive","splitpush","cc","sustain"], strong:["Gangplank","Ryze","Corki","Viktor","Azir"], weak:["Pantheon","Renekton","Fiora","Jax","Malphite"] },
+    Jax:        { lanes:["top","jungle"], aram:"C", tags:["splitpush","dive","sustain","scaling"], strong:["Fiora","Riven","Irelia","Yasuo","Camille"], weak:["Malphite","Pantheon","Vayne","Quinn","Gnar"] },
+    Jayce:      { lanes:["top","mid"], aram:"B", tags:["poke","burst","splitpush"], strong:["Nasus","Sett","Darius","Mordekaiser"], weak:["Irelia","Yasuo","Riven","Wukong"] },
+    KSante:     { lanes:["top"], aram:"B", tags:["frontline","cc","engage","peel"], strong:["Darius","Garen","Sett","Aatrox"], weak:["Vayne","Fiora","Gwen","Gangplank"] },
+    Kayle:      { lanes:["top"], aram:"A", tags:["scaling","poke","aoe","splitpush"], strong:["Darius","Garen","Nasus","Aatrox"], weak:["Renekton","Pantheon","Fiora","Irelia","Riven"] },
+    Kled:       { lanes:["top"], aram:"C", tags:["dive","engage","sustain","splitpush"], strong:["Nasus","Kayle","Vladimir","Gangplank"], weak:["Vayne","Gnar","Teemo","Quinn"] },
+    Malphite:   { lanes:["top","support"], aram:"A", tags:["engage","frontline","aoe","cc"], strong:["Yasuo","Yone","Fiora","Jax","Zed","Tryndamere"], weak:["Vayne","Cassiopeia","Kennen","Gwen"] },
+    Maokai:     { lanes:["top","support","jungle"], aram:"A", tags:["engage","cc","sustain","frontline"], strong:["Yasuo","Fiora","Riven","Camille"], weak:["Vayne","Gnar","Gwen","Quinn"] },
+    Mordekaiser:{ lanes:["top"], aram:"A", tags:["sustain","aoe","frontline","dive"], strong:["Yasuo","Yone","Kassadin","Sylas"], weak:["Vayne","Fiora","Gwen","Darius","Sett"] },
+    Nasus:      { lanes:["top"], aram:"B", tags:["scaling","sustain","splitpush","cc"], strong:["Vladimir","Kayle","Teemo","Kassadin"], weak:["Darius","Fiora","Renekton","Pantheon","Garen"] },
+    Olaf:       { lanes:["top","jungle"], aram:"B", tags:["dive","sustain","frontline","engage"], strong:["Teemo","Vayne","Kayle","Nasus"], weak:["Gnar","Quinn","Jayce","Vladimir"] },
+    Ornn:       { lanes:["top"], aram:"A", tags:["frontline","engage","cc","aoe"], strong:["Darius","Sett","Nasus","Mordekaiser"], weak:["Vayne","Gwen","Fiora","Kennen"] },
+    Pantheon:   { lanes:["top","mid","support"], aram:"B", tags:["poke","burst","engage","dive"], strong:["Nasus","Irelia","Jax","Riven","Yasuo"], weak:["Darius","Renekton","Gnar","Teemo"] },
+    Poppy:      { lanes:["top","jungle","support"], aram:"B", tags:["frontline","cc","peel","engage"], strong:["Fiora","Irelia","Yasuo","Camille","Riven"], weak:["Darius","Vladimir","Gangplank","Kayle"] },
+    Quinn:      { lanes:["top"], aram:"C", tags:["poke","splitpush","burst","mobility"], strong:["Darius","Garen","Aatrox","Nasus","Illaoi"], weak:["Malphite","Pantheon","Wukong","Kayle"] },
+    Renekton:   { lanes:["top"], aram:"C", tags:["dive","engage","sustain","frontline"], strong:["Nasus","Gangplank","Irelia","Aatrox","Kayle"], weak:["Darius","Fiora","Gnar","Quinn","Vayne"] },
+    Riven:      { lanes:["top"], aram:"C", tags:["dive","splitpush","burst","mobility"], strong:["Nasus","Sett","Yorick","Mordekaiser"], weak:["Renekton","Pantheon","Jax","Darius","Malphite"] },
+    Rumble:     { lanes:["top","jungle"], aram:"A", tags:["poke","aoe","splitpush","dive"], strong:["Yasuo","Nasus","Darius","Sett"], weak:["Renekton","Pantheon","Irelia","Jax"] },
+    Sett:       { lanes:["top","support"], aram:"B", tags:["frontline","cc","sustain","engage"], strong:["Yasuo","Fiora","Riven","Nasus"], weak:["Vayne","Gnar","Gwen","Quinn","Fiora"] },
+    Shen:       { lanes:["top","support"], aram:"B", tags:["frontline","peel","splitpush","cc"], strong:["Fiora","Tryndamere","Yasuo","Riven"], weak:["Darius","Gangplank","Teemo","Quinn"] },
+    Singed:     { lanes:["top"], aram:"B", tags:["sustain","splitpush","frontline","poke_res"], strong:["Nasus","Kayle","Yorick"], weak:["Vayne","Cassiopeia","Teemo","Fiora"] },
+    Sion:       { lanes:["top"], aram:"B", tags:["frontline","engage","cc","splitpush"], strong:["Nasus","Garen","Sett"], weak:["Vayne","Fiora","Gwen","Quinn"] },
+    Teemo:      { lanes:["top"], aram:"B", tags:["poke","splitpush","aoe"], strong:["Darius","Garen","Nasus","Sett","Aatrox"], weak:["Yasuo","Irelia","Pantheon","Kennen"] },
+    Tryndamere: { lanes:["top"], aram:"B", tags:["splitpush","sustain","dive","scaling"], strong:["Nasus","Kayle","Vladimir","Yorick"], weak:["Malphite","Poppy","Jax","Quinn","Darius"] },
+    Urgot:      { lanes:["top"], aram:"B", tags:["poke","frontline","burst","sustain"], strong:["Darius","Sett","Nasus","Aatrox","Renekton"], weak:["Vayne","Gnar","Kennen","Quinn"] },
+    Volibear:   { lanes:["top","jungle"], aram:"B", tags:["dive","engage","sustain","frontline"], strong:["Yasuo","Fiora","Nasus","Kayle"], weak:["Vayne","Gnar","Gangplank","Teemo"] },
+    Yorick:     { lanes:["top"], aram:"B", tags:["splitpush","sustain","frontline"], strong:["Darius","Sett","Aatrox","Mordekaiser"], weak:["Fiora","Gwen","Vayne","Gangplank"] },
+    Gragas:     { lanes:["top","jungle","mid"], aram:"A", tags:["engage","cc","poke","frontline"], strong:["Yasuo","Zed","Katarina"], weak:["Aatrox","Darius","Renekton","Fiora"] },
+    Kennen:     { lanes:["top","mid"], aram:"A", tags:["poke","aoe","engage","burst"], strong:["Darius","Sett","Nasus","Aatrox","Illaoi"], weak:["Pantheon","Renekton","Irelia","Wukong"] },
+    Vladimir:   { lanes:["top","mid"], aram:"A", tags:["sustain","aoe","scaling","poke"], strong:["Nasus","Kayle","Sett"], weak:["Darius","Renekton","Pantheon","Garen","Kled"] },
+    Ambessa:    { lanes:["top","mid"], aram:"B", tags:["dive","engage","sustain","mobility"], strong:["Nasus","Garen","Sett","Yone"], weak:["Vayne","Gnar","Teemo","Quinn"] },
+
+    // ========== 打野 JUNGLE ==========
+    Amumu:      { lanes:["jungle","support"], aram:"A", tags:["engage","aoe","cc","frontline"], strong:["Yasuo","Zed","Katarina","Twitch"], weak:["Olaf","Kindred","Udyr"] },
+    Belveth:    { lanes:["jungle"], aram:"C", tags:["dive","sustain","scaling","splitpush"], strong:["Elise","Shaco","Graves"], weak:["Amumu","Maokai","Sejuani"] },
+    Briar:      { lanes:["jungle"], aram:"B", tags:["dive","sustain","engage","burst"], strong:["Karthus","Kayn","Graves"], weak:["Maokai","Sejuani","Rammus"] },
+    Diana:      { lanes:["jungle","mid"], aram:"A", tags:["dive","aoe","burst","engage"], strong:["Zed","Yasuo","Viktor","Lux"], weak:["Lissandra","Pantheon","Kassadin"] },
+    Ekko:       { lanes:["jungle","mid"], aram:"A", tags:["dive","burst","sustain","aoe"], strong:["Zed","Yasuo","Viktor","Lux"], weak:["Kassadin","Fizz","Talon"] },
+    Elise:      { lanes:["jungle"], aram:"B", tags:["dive","burst","engage","poke"], strong:["Graves","Karthus","Shaco"], weak:["Belveth","Udyr","Warwick"] },
+    Evelynn:    { lanes:["jungle"], aram:"B", tags:["dive","burst","aoe","scaling"], strong:["Lux","Viktor","Ahri","Zed"], weak:["Lee Sin","Elise","Rammus"] },
+    Fiddlesticks:{ lanes:["jungle","support"], aram:"A", tags:["engage","aoe","cc","burst"], strong:["Yasuo","Katarina","Jinx"], weak:["Lee Sin","Elise","Kindred"] },
+    Graves:     { lanes:["jungle"], aram:"B", tags:["burst","poke","sustain","dive"], strong:["Elise","Nidalee","Ekko"], weak:["Sejuani","Amumu","Maokai"] },
+    Hecarim:    { lanes:["jungle"], aram:"B", tags:["engage","dive","sustain","frontline"], strong:["Karthus","Lux","Viktor","Zed"], weak:["Rammus","Sejuani","Maokai"] },
+    JarvanIV:   { lanes:["jungle"], aram:"B", tags:["engage","cc","dive","frontline"], strong:["Yasuo","Zed","Katarina","Graves"], weak:["Olaf","Udyr","Belveth"] },
+    Karthus:    { lanes:["jungle","mid"], aram:"A", tags:["poke","aoe","scaling","burst"], strong:["Jinx","Aphelios","Twitch"], weak:["Kha'Zix","Rengar","Diana"] },
+    Kayn:       { lanes:["jungle"], aram:"C", tags:["dive","burst","sustain","scaling"], strong:["Karthus","Graves","Elise"], weak:["Sejuani","Rammus","Maokai"] },
+    Khazix:     { lanes:["jungle"], aram:"C", tags:["dive","burst","splitpush","mobility"], strong:["Karthus","Graves","Elise","Nidalee"], weak:["Sejuani","Rammus","Amumu"] },
+    Kindred:    { lanes:["jungle"], aram:"B", tags:["poke","scaling","peel","sustain"], strong:["Shaco","Khazix","Rengar"], weak:["Amumu","Zac","Sejuani"] },
+    LeeSin:     { lanes:["jungle"], aram:"C", tags:["engage","dive","poke","peel"], strong:["Elise","Graves","Khazix","Nidalee"], weak:["Udyr","Belveth","Volibear"] },
+    Lillia:     { lanes:["jungle"], aram:"A", tags:["poke","aoe","sustain","scaling"], strong:["Karthus","Graves","Zed"], weak:["Sejuani","Amumu","Rammus"] },
+    MasterYi:   { lanes:["jungle"], aram:"B", tags:["dive","sustain","splitpush","scaling"], strong:["Karthus","Kayn","Katarina"], weak:["Rammus","Jax","Malphite","Sejuani"] },
+    Nidalee:    { lanes:["jungle"], aram:"B", tags:["poke","mobility","burst","sustain"], strong:["Khazix","Graves","Shaco"], weak:["Amumu","Sejuani","Zac"] },
+    Nocturne:   { lanes:["jungle"], aram:"B", tags:["dive","burst","engage","splitpush"], strong:["Zed","Yasuo","Lux","Viktor"], weak:["Rammus","Sejuani","Maokai"] },
+    Nunu:       { lanes:["jungle"], aram:"A", tags:["engage","sustain","cc","frontline"], strong:["Karthus","Graves","Zed"], weak:["Olaf","Udyr","Belveth"] },
+    Rammus:     { lanes:["jungle"], aram:"B", tags:["engage","frontline","cc","dive"], strong:["MasterYi","Tryndamere","Zed","Talon"], weak:["Vladimir","Cassiopeia","Karthus"] },
+    RekSai:     { lanes:["jungle"], aram:"B", tags:["engage","dive","sustain","cc"], strong:["Graves","Elise","Khazix"], weak:["Sejuani","Maokai","Udyr"] },
+    Rengar:     { lanes:["jungle"], aram:"C", tags:["dive","burst","splitpush","mobility"], strong:["Karthus","Graves","Khazix","Nidalee"], weak:["Rammus","Sejuani","Amumu"] },
+    Sejuani:    { lanes:["jungle"], aram:"A", tags:["engage","cc","frontline","aoe"], strong:["Khazix","Graves","Yasuo","Zed"], weak:["Vladimir","Cassiopeia","Karthus"] },
+    Shaco:      { lanes:["jungle","support"], aram:"B", tags:["dive","burst","splitpush","poke"], strong:["Karthus","Nidalee","Graves"], weak:["Sejuani","Amumu","Rammus"] },
+    Shyvana:    { lanes:["jungle"], aram:"B", tags:["dive","aoe","frontline","scaling"], strong:["Karthus","Graves","Kayn"], weak:["Sejuani","Elise","Rammus"] },
+    Skarner:    { lanes:["jungle","top"], aram:"B", tags:["engage","cc","frontline","dive"], strong:["Yasuo","Graves","Zed"], weak:["Vladimir","Karthus","Gwen"] },
+    Trundle:    { lanes:["jungle","top"], aram:"B", tags:["sustain","splitpush","frontline","dive"], strong:["Nasus","Shyvana","Sett"], weak:["Vayne","Gnar","Teemo"] },
+    Udyr:       { lanes:["jungle"], aram:"B", tags:["dive","sustain","frontline","splitpush"], strong:["Elise","LeeSin","Graves"], weak:["Vladimir","Gnar","Karthus"] },
+    Vi:         { lanes:["jungle"], aram:"B", tags:["engage","dive","cc","burst"], strong:["Zed","Yasuo","Graves","Elise"], weak:["Sejuani","Rammus","Maokai"] },
+    Viego:      { lanes:["jungle"], aram:"C", tags:["dive","sustain","burst","scaling"], strong:["Karthus","Graves","Elise"], weak:["Sejuani","Rammus","Maokai"] },
+    Warwick:    { lanes:["jungle","top"], aram:"B", tags:["dive","sustain","engage","frontline"], strong:["Elise","Graves","Kayn","Nidalee"], weak:["Quinn","Teemo","Gnar"] },
+    Zac:        { lanes:["jungle","top"], aram:"A", tags:["engage","cc","frontline","aoe"], strong:["Yasuo","Zed","Graves","Katarina"], weak:["Olaf","Udyr","Gwen"] },
+
+    // ========== 中单 MID ==========
+    Ahri:       { lanes:["mid"], aram:"A", tags:["poke","burst","mobility","aoe"], strong:["Yasuo","Zed","Lux","Veigar"], weak:["Kassadin","Fizz","Katarina","Talon"] },
+    Akali:      { lanes:["mid","top"], aram:"B", tags:["dive","burst","mobility","splitpush"], strong:["Lux","Viktor","Orianna","Syndra"], weak:["Kassadin","Galio","Pantheon","Fizz"] },
+    Akshan:     { lanes:["mid"], aram:"B", tags:["poke","burst","mobility","splitpush"], strong:["Lux","Xerath","Zoe"], weak:["Kassadin","Fizz","Talon"] },
+    Anivia:     { lanes:["mid"], aram:"A", tags:["poke","aoe","cc","scaling"], strong:["Yasuo","Zed","Talon","Katarina"], weak:["Fizz","Kassadin","Diana"] },
+    Annie:      { lanes:["mid","support"], aram:"A", tags:["burst","aoe","cc","engage"], strong:["Yasuo","Zed","Lux","Viktor"], weak:["Kassadin","Fizz","Talon"] },
+    AurelionSol:{ lanes:["mid"], aram:"A", tags:["poke","aoe","scaling","sustain"], strong:["Lux","Xerath","Orianna"], weak:["Fizz","Kassadin","Talon","Zed"] },
+    Azir:       { lanes:["mid"], aram:"B", tags:["poke","aoe","peel","scaling"], strong:["Yasuo","Zed","Katarina"], weak:["Fizz","Kassadin","Talon","LeBlanc"] },
+    Cassiopeia: { lanes:["mid","top"], aram:"A", tags:["poke","aoe","sustain","scaling"], strong:["Yasuo","Zed","Vladimir","Swain"], weak:["Fizz","Kassadin","Talon","Diana"] },
+    Corki:      { lanes:["mid"], aram:"A", tags:["poke","burst","aoe","scaling"], strong:["Ryze","Azir","Viktor"], weak:["Zed","Talon","Fizz","Katarina"] },
+    Diana_mid:  { lanes:["mid"], aram:"A", tags:["dive","aoe","burst","engage"], strong:["Zed","Yasuo","Lux"], weak:["Kassadin","Pantheon","Fizz"] },
+    Fizz:       { lanes:["mid"], aram:"C", tags:["dive","burst","mobility","splitpush"], strong:["Lux","Orianna","Viktor","Syndra","Ahri"], weak:["Kassadin","Lissandra","Malzahar"] },
+    Galio:      { lanes:["mid","support"], aram:"A", tags:["engage","aoe","cc","frontline"], strong:["Akali","Zed","Yasuo","Talon"], weak:["Cassiopeia","Vladimir","Swain"] },
+    Hwei:       { lanes:["mid","support"], aram:"A", tags:["poke","aoe","cc","burst"], strong:["Yasuo","Zed","Lux"], weak:["Fizz","Kassadin","Talon"] },
+    Kassadin:   { lanes:["mid"], aram:"C", tags:["dive","burst","mobility","scaling"], strong:["Ahri","Syndra","Orianna","Viktor","Xerath"], weak:["Talon","Pantheon","LeBlanc","Fizz"] },
+    Katarina:   { lanes:["mid"], aram:"B", tags:["dive","burst","aoe","mobility"], strong:["Lux","Viktor","Orianna","Xerath"], weak:["Galio","Diana","Lissandra","Pantheon"] },
+    Leblanc:    { lanes:["mid"], aram:"B", tags:["burst","mobility","poke","splitpush"], strong:["Azir","Ryze","Orianna","Viktor"], weak:["Kassadin","Galio","Malzahar"] },
+    Lissandra:  { lanes:["mid"], aram:"A", tags:["engage","cc","aoe","burst"], strong:["Yasuo","Zed","Katarina","Fizz"], weak:["Vladimir","Cassiopeia","Swain"] },
+    Lux:        { lanes:["mid","support"], aram:"A", tags:["poke","burst","cc","aoe"], strong:["Ryze","Azir","Viktor"], weak:["Zed","Talon","Fizz","Kassadin"] },
+    Malzahar:   { lanes:["mid"], aram:"A", tags:["poke","aoe","cc","sustain"], strong:["Fizz","Zed","Yasuo","Katarina"], weak:["Talon","LeBlanc","Pantheon"] },
+    Mel:        { lanes:["mid","support"], aram:"A", tags:["poke","aoe","burst","peel"], strong:["Yasuo","Zed","Lux"], weak:["Fizz","Kassadin","Talon"] },
+    Naafiri:    { lanes:["mid","jungle"], aram:"B", tags:["dive","burst","sustain","splitpush"], strong:["Lux","Xerath","Orianna","Viktor"], weak:["Kassadin","Galio","Malzahar"] },
+    Orianna:    { lanes:["mid"], aram:"A", tags:["poke","aoe","cc","peel"], strong:["Ryze","Azir","Cassiopeia"], weak:["Zed","Fizz","Katarina","Talon"] },
+    Pantheon_mid:{lanes:["mid"], aram:"B", tags:["poke","burst","engage","dive"], strong:["Kassadin","Ryze","Azir","Yasuo"], weak:["Malzahar","Galio","Lissandra"] },
+    Qiyana:     { lanes:["mid"], aram:"C", tags:["dive","burst","aoe","mobility"], strong:["Lux","Orianna","Viktor","Syndra"], weak:["Kassadin","Galio","Malzahar"] },
+    Ryze:       { lanes:["mid"], aram:"B", tags:["poke","aoe","scaling","sustain"], strong:["Azir","Orianna","Viktor"], weak:["Zed","Talon","Fizz","Katarina"] },
+    Smolder:    { lanes:["mid","adc"], aram:"B", tags:["poke","scaling","aoe","sustain"], strong:["Azir","Ryze","Orianna"], weak:["Zed","Talon","Fizz","Katarina"] },
+    Swain:      { lanes:["mid","support","adc"], aram:"A", tags:["sustain","aoe","cc","poke"], strong:["Yasuo","Zed","Katarina","Fizz"], weak:["Cassiopeia","Kassadin","Talon"] },
+    Sylas:      { lanes:["mid","top"], aram:"A", tags:["dive","sustain","aoe","burst"], strong:["Lux","Xerath","Orianna","Viktor"], weak:["Kassadin","Galio","Malzahar"] },
+    Syndra:     { lanes:["mid"], aram:"A", tags:["poke","burst","cc","aoe"], strong:["Ryze","Azir","Viktor","Yasuo"], weak:["Zed","Fizz","Talon","Kassadin"] },
+    Taliyah:    { lanes:["mid","jungle"], aram:"A", tags:["poke","aoe","cc","scaling"], strong:["Yasuo","Zed","Katarina"], weak:["Fizz","Kassadin","Talon"] },
+    Talon:      { lanes:["mid"], aram:"B", tags:["dive","burst","splitpush","mobility"], strong:["Lux","Orianna","Syndra","Azir","Viktor"], weak:["Kassadin","Galio","Pantheon"] },
+    TwistedFate:{ lanes:["mid"], aram:"A", tags:["poke","aoe","cc","scaling"], strong:["Ryze","Azir","Viktor"], weak:["Zed","Talon","Fizz","Kassadin"] },
+    Veigar:     { lanes:["mid","support"], aram:"A", tags:["poke","burst","cc","scaling"], strong:["Ryze","Azir","Viktor","Yasuo"], weak:["Zed","Fizz","Talon","Kassadin"] },
+    Velkoz:     { lanes:["mid","support"], aram:"A", tags:["poke","aoe","burst","scaling"], strong:["Ryze","Azir","Viktor"], weak:["Zed","Talon","Fizz","Kassadin"] },
+    Vex:        { lanes:["mid"], aram:"A", tags:["poke","burst","cc","aoe"], strong:["Yasuo","Zed","Katarina","Akali"], weak:["Kassadin","Malzahar","Talon"] },
+    Viktor:     { lanes:["mid"], aram:"A", tags:["poke","aoe","scaling","burst"], strong:["Ryze","Azir","Cassiopeia"], weak:["Zed","Fizz","Talon","Katarina"] },
+    Xerath:     { lanes:["mid","support"], aram:"S", tags:["poke","aoe","burst","scaling"], strong:["Ryze","Azir","Viktor","Orianna"], weak:["Zed","Talon","Fizz","Kassadin"] },
+    Yone:       { lanes:["mid","top"], aram:"B", tags:["dive","aoe","burst","sustain"], strong:["Lux","Orianna","Viktor","Syndra"], weak:["Pantheon","Malphite","Annie","Renekton"] },
+    Zed:        { lanes:["mid"], aram:"C", tags:["dive","burst","splitpush","mobility"], strong:["Lux","Orianna","Viktor","Syndra","Xerath"], weak:["Kassadin","Malzahar","Lissandra","Galio"] },
+    Zoe:        { lanes:["mid"], aram:"A", tags:["poke","burst","cc","scaling"], strong:["Ryze","Azir","Viktor","Orianna"], weak:["Zed","Talon","Fizz","Kassadin"] },
+
+    // ========== ADC 射手 ==========
+    Aphelios:   { lanes:["adc"], aram:"A", tags:["poke","aoe","scaling","burst"], strong:["Kalista","Draven","Nilah"], weak:["Caitlyn","Lucian","Tristana","Samira"] },
+    Ashe:       { lanes:["adc","support"], aram:"A", tags:["poke","cc","peel","scaling"], strong:["Kalista","Nilah","Samira"], weak:["Caitlyn","Draven","Lucian"] },
+    Caitlyn:    { lanes:["adc"], aram:"B", tags:["poke","burst","scaling"], strong:["Aphelios","Jinx","Kogmaw","Nilah"], weak:["Draven","Lucian","Samira","Tristana"] },
+    Draven:     { lanes:["adc"], aram:"B", tags:["burst","poke","scaling"], strong:["Aphelios","Jinx","Kogmaw","Ashe"], weak:["Caitlyn","Tristana","Samira"] },
+    Ezreal:     { lanes:["adc"], aram:"B", tags:["poke","mobility","scaling","burst"], strong:["Kalista","Nilah","Draven"], weak:["Caitlyn","Lucian","Tristana"] },
+    Jhin:       { lanes:["adc"], aram:"A", tags:["poke","burst","cc","scaling"], strong:["Jinx","Kogmaw","Aphelios"], weak:["Draven","Lucian","Samira","Tristana"] },
+    Jinx:       { lanes:["adc"], aram:"A", tags:["aoe","scaling","poke","burst"], strong:["Kogmaw","Aphelios","Twitch"], weak:["Caitlyn","Draven","Lucian","Tristana"] },
+    Kaisa:      { lanes:["adc"], aram:"B", tags:["dive","burst","scaling","aoe"], strong:["Jinx","Kogmaw","Aphelios"], weak:["Caitlyn","Draven","Tristana"] },
+    Kalista:    { lanes:["adc"], aram:"C", tags:["poke","mobility","engage","peel"], strong:["Jinx","Kogmaw","Aphelios"], weak:["Caitlyn","Draven","Samira"] },
+    Kogmaw:     { lanes:["adc"], aram:"A", tags:["aoe","scaling","poke","burst"], strong:["Aphelios","Twitch"], weak:["Caitlyn","Draven","Lucian","Thresh"] },
+    Lucian:     { lanes:["adc"], aram:"B", tags:["burst","poke","mobility"], strong:["Aphelios","Jinx","Kogmaw","Ezreal"], weak:["Caitlyn","Draven","Samira"] },
+    MissFortune:{ lanes:["adc"], aram:"A", tags:["poke","aoe","burst","scaling"], strong:["Jinx","Kogmaw","Aphelios"], weak:["Caitlyn","Draven","Lucian"] },
+    Nilah:      { lanes:["adc"], aram:"B", tags:["dive","sustain","aoe","scaling"], strong:["Jinx","Kogmaw","Aphelios"], weak:["Caitlyn","Draven","Lucian"] },
+    Samira:     { lanes:["adc"], aram:"B", tags:["dive","aoe","burst","sustain"], strong:["Jinx","Kogmaw","Aphelios","Ashe"], weak:["Caitlyn","Draven","Tristana"] },
+    Senna:      { lanes:["adc","support"], aram:"A", tags:["poke","scaling","peel","sustain"], strong:["Kalista","Nilah","Samira"], weak:["Caitlyn","Draven","Lucian"] },
+    Sivir:      { lanes:["adc"], aram:"B", tags:["aoe","poke","peel","scaling"], strong:["Kalista","Nilah","Varus"], weak:["Caitlyn","Draven","Lucian"] },
+    Smolder_adc:{ lanes:["adc"], aram:"B", tags:["poke","scaling","aoe","sustain"], strong:["Kogmaw","Aphelios","Jinx"], weak:["Caitlyn","Draven","Lucian"] },
+    Tristana:   { lanes:["adc"], aram:"B", tags:["burst","dive","scaling","splitpush"], strong:["Aphelios","Jinx","Kogmaw","Caitlyn"], weak:["Draven","Lucian","Samira"] },
+    Twitch:     { lanes:["adc"], aram:"A", tags:["aoe","burst","scaling","poke"], strong:["Jinx","Kogmaw","Aphelios"], weak:["Caitlyn","Draven","Thresh","Nautilus"] },
+    Varus:      { lanes:["adc"], aram:"A", tags:["poke","aoe","cc","scaling"], strong:["Jinx","Kogmaw","Kalista"], weak:["Caitlyn","Draven","Lucian"] },
+    Vayne:      { lanes:["adc","top"], aram:"B", tags:["dive","scaling","sustain","burst"], strong:["Kogmaw","Jinx","Aphelios"], weak:["Caitlyn","Draven","Lucian","Thresh"] },
+    Xayah:      { lanes:["adc"], aram:"A", tags:["aoe","peel","scaling","burst"], strong:["Jinx","Kogmaw","Aphelios"], weak:["Caitlyn","Draven","Lucian"] },
+    Yunara:     { lanes:["adc"], aram:"B", tags:["poke","scaling","aoe","sustain"], strong:["Jinx","Kogmaw","Aphelios"], weak:["Caitlyn","Draven","Lucian"] },
+    Zeri:       { lanes:["adc"], aram:"B", tags:["poke","mobility","scaling","aoe"], strong:["Jinx","Kogmaw","Aphelios"], weak:["Caitlyn","Draven","Samira"] },
+
+    // ========== 辅助 SUPPORT ==========
+    Alistar:    { lanes:["support"], aram:"B", tags:["engage","cc","peel","frontline"], strong:["Lux","Senna","Soraka"], weak:["Poppy","Janna"] },
+    Bard:       { lanes:["support"], aram:"B", tags:["poke","cc","peel","engage"], strong:["Soraka","Senna","Sona"], weak:["Blitzcrank","Nautilus","Leona"] },
+    Blitzcrank: { lanes:["support"], aram:"B", tags:["engage","cc","burst"], strong:["Soraka","Senna","Sona","Lux"], weak:["Morgana","Janna","Thresh"] },
+    Braum:      { lanes:["support"], aram:"B", tags:["peel","cc","frontline","engage"], strong:["Draven","Samira","Lucian"], weak:["Soraka","Karma","Lux"] },
+    Janna:      { lanes:["support"], aram:"A", tags:["peel","poke","sustain","cc"], strong:["Blitzcrank","Leona","Nautilus"], weak:["Soraka","Lux","Brand"] },
+    Karma:      { lanes:["support","mid"], aram:"A", tags:["poke","peel","sustain","cc"], strong:["Senna","Soraka","Sona"], weak:["Leona","Nautilus","Blitzcrank"] },
+    Leona:      { lanes:["support"], aram:"A", tags:["engage","cc","frontline","dive"], strong:["Soraka","Senna","Lux","Sona"], weak:["Morgana","Janna","Alistar"] },
+    Lulu:       { lanes:["support"], aram:"A", tags:["peel","poke","sustain","cc"], strong:["Draven","Samira","Nilah"], weak:["Blitzcrank","Leona","Brand"] },
+    Milio:      { lanes:["support"], aram:"A", tags:["peel","sustain","poke"], strong:["Draven","Samira","Jinx"], weak:["Blitzcrank","Leona","Pyke"] },
+    Morgana:    { lanes:["support","mid"], aram:"A", tags:["poke","cc","aoe","peel"], strong:["Leona","Blitzcrank","Nautilus","Thresh"], weak:["Soraka","Janna","Lux"] },
+    Nami:       { lanes:["support"], aram:"A", tags:["poke","sustain","peel","cc"], strong:["Draven","Samira","Lucian"], weak:["Blitzcrank","Leona","Brand"] },
+    Nautilus:   { lanes:["support"], aram:"A", tags:["engage","cc","frontline","peel"], strong:["Soraka","Senna","Lux","Sona"], weak:["Morgana","Janna","Alistar"] },
+    Pyke:       { lanes:["support"], aram:"B", tags:["engage","burst","cc","dive"], strong:["Soraka","Senna","Sona","Lux"], weak:["Morgana","Janna","Milio"] },
+    Rakan:      { lanes:["support"], aram:"A", tags:["engage","peel","cc","mobility"], strong:["Lux","Senna","Soraka"], weak:["Blitzcrank","Leona","Nautilus"] },
+    Rell:       { lanes:["support"], aram:"A", tags:["engage","cc","frontline","aoe"], strong:["Lux","Senna","Soraka"], weak:["Janna","Morgana","Alistar"] },
+    Renata:     { lanes:["support"], aram:"A", tags:["peel","cc","aoe","sustain"], strong:["Draven","Samira","Yasuo"], weak:["Blitzcrank","Leona","Pyke"] },
+    Seraphine:  { lanes:["support","mid"], aram:"A", tags:["poke","aoe","sustain","cc"], strong:["Senna","Soraka","Sona"], weak:["Leona","Nautilus","Pyke"] },
+    Sona:       { lanes:["support"], aram:"A", tags:["poke","sustain","aoe","peel"], strong:["Draven","Samira","Lucian"], weak:["Blitzcrank","Leona","Pyke","Brand"] },
+    Soraka:     { lanes:["support"], aram:"A", tags:["sustain","poke","peel"], strong:["Draven","Samira","Nilah"], weak:["Blitzcrank","Leona","Pyke","Brand"] },
+    Taric:      { lanes:["support"], aram:"A", tags:["peel","cc","sustain","frontline"], strong:["Draven","Samira","Lucian"], weak:["Brand","Vel'Koz","Xerath"] },
+    Thresh:     { lanes:["support"], aram:"A", tags:["engage","cc","peel","poke"], strong:["Draven","Samira","Vayne","Twitch"], weak:["Morgana","Janna","Milio"] },
+    Yuumi:      { lanes:["support"], aram:"B", tags:["sustain","peel","poke","scaling"], strong:["Draven","Samira","Nilah","Kog'Maw"], weak:["Blitzcrank","Leona","Pyke"] },
+    Zilean:     { lanes:["support","mid"], aram:"A", tags:["peel","poke","cc","sustain"], strong:["Draven","Samira","Yasuo"], weak:["Leona","Nautilus","Pyke"] },
+    Zyra:       { lanes:["support"], aram:"A", tags:["poke","aoe","cc","burst"], strong:["Senna","Soraka","Sona","Draven"], weak:["Leona","Nautilus","Pyke"] },
+    Brand:      { lanes:["support","mid"], aram:"A", tags:["poke","aoe","burst","cc"], strong:["Soraka","Sona","Senna","Yasuo"], weak:["Leona","Nautilus","Pyke"] },
+
+    // ========== 其它常见 ==========
+    Heimerdinger:{lanes:["mid","top","support"], aram:"A", tags:["poke","aoe","sustain","peel"], strong:["Yasuo","Zed","Katarina"], weak:["Fizz","Kassadin","Talon"] },
+    Neeko:      { lanes:["mid","support"], aram:"A", tags:["engage","aoe","cc","burst"], strong:["Yasuo","Zed","Lux"], weak:["Fizz","Kassadin","Talon"] },
+    Ziggs:      { lanes:["mid","adc"], aram:"A", tags:["poke","aoe","burst","scaling"], strong:["Ryze","Azir","Viktor"], weak:["Zed","Talon","Fizz","Kassadin"] },
+    Ivern:      { lanes:["jungle"], aram:"B", tags:["peel","sustain","engage","poke"], strong:["Khazix","Rengar","Graves"], weak:["Karthus","Zac","Amumu"] },
+    Karma_sup:  { lanes:["support"], aram:"A", tags:["poke","peel","sustain"], strong:["Senna","Soraka"], weak:["Leona","Nautilus"] },
+    TahmKench:  { lanes:["top","support"], aram:"B", tags:["peel","sustain","frontline","cc"], strong:["Nasus","Darius","Draven"], weak:["Vayne","Gnar","Teemo"] },
+    Gnar_top:   { lanes:["top"], aram:"B", tags:["poke","cc","aoe"], strong:["Darius","Aatrox"], weak:["Yone","Irelia"] },
+    Mordekaiser_top:{lanes:["top"], aram:"A", tags:["sustain","aoe","frontline"], strong:["Yasuo","Yone"], weak:["Vayne","Fiora"] },
+  }
+};
+
+</script>
+<script>
+/*
+ * 扩展数据：英雄别称 + 打法归类 + 大乱斗符文模板
+ * 单独文件，便于维护；在 data.js 之后、app.js 之前加载。
+ */
+Object.assign(window.LOL_DATA, {
+
+  /* ---------- 英雄别称 / 外号（搜索可命中，详情会展示） ---------- */
+  alias: {
+    Aatrox:["剑魔","暗裔"], Ahri:["狐狸","阿狸"], Akali:["阿卡丽","忍者"],
+    Akshan:["阿克尚","义警"], Alistar:["牛头"], Amumu:["木乃伊","木木"], Ambessa:["狼母","安蓓萨"],
+    Anivia:["冰鸟","大鸟"], Annie:["火女","安妮"], Aphelios:["武器","APL"],
+    Ashe:["寒冰","射手"], AurelionSol:["龙王","星龙"], Azir:["沙皇","鸟人"],
+    Bard:["巴德","风游"], Belveth:["虚空女皇","鱼"], Blitzcrank:["机器人","钩子"],
+    Brand:["火男","布兰德"], Braum:["大胡子","布隆"], Briar:["吸血鬼妹","布里尔"],
+    Caitlyn:["女警"], Camille:["青钢影","大菊花"], Cassiopeia:["蛇女"],
+    Chogath:["大虫子","饼干"], Corki:["飞机"], Darius:["诺手","诺克萨斯之手"],
+    Diana:["皎月"], Draven:["德莱文","斧头"], DrMundo:["蒙多","祖安狂人"],
+    Ekko:["艾克","时间刺客"], Elise:["蜘蛛"], Evelynn:["寡妇"], Ezreal:["EZ","探险家"],
+    Fiddlesticks:["稻草人"], Fiora:["剑姬"], Fizz:["小鱼人"], Galio:["石人","柱子"],
+    Gangplank:["船长","GP"], Garen:["盖伦","大宝剑","草丛伦","盖世猛男"],
+    Gnar:["牙牙","腊肠犬","纳尔"], Gragas:["酒桶"], Graves:["男枪"],
+    Gwen:["格温","裁决之刃"], Hecarim:["人马","战争之影"], Heimerdinger:["大头"],
+    Hwei:["画家","彗"], Illaoi:["章鱼女","俄洛伊"], Irelia:["刀妹","翠神"],
+    Ivern:["艾翁","树精"], Janna:["风女"], JarvanIV:["皇子","嘉文"],
+    Jax:["武器","武器大师"], Jayce:["杰斯","光锤"], Jhin:["烬","戏命师","四杀"],
+    Jinx:["萝莉","爆爆","金克丝"], Kaisa:["KS","卡莎"], Kalista:["复仇之矛"],
+    Karma:["卡尔玛","天启者"], Karthus:["死歌","死亡颂唱者"], Kassadin:["卡萨丁","控制杀"],
+    Katarina:["卡特","不祥之刃"], Kayle:["天使","正义天使"], Kayn:["凯隐","影流之镰"],
+    Kennen:["凯南","松鼠"], Khazix:["螳螂"], Kindred:["千珏","羊","永猎双子"],
+    Kled:["克烈","暴走骑士"], KogMaw:["大嘴","深渊巨口"], KSante:["门神","K桑","奎桑提"],
+    Leblanc:["妖姬","乐芙兰"], LeeSin:["瞎子","盲僧","李青"], Leona:["日女","曙光女神"],
+    Lillia:["鹿","含羞蓓蕾"], Lissandra:["冰女","冰霜女巫"], Lucian:["卢锡安","圣枪游侠"],
+    Lulu:["璐璐","仙灵"], Lux:["光辉"], Malphite:["石头人","岩雀?否"],
+    Malzahar:["先知","虚空先知"], Maokai:["大树","树人"], MasterYi:["剑圣","一刀"],
+    Milio:["米利欧","火男孩"], MissFortune:["女枪","MF","厄运小姐"], MonkeyKing:["猴子","悟空","齐天大圣"],
+    Mordekaiser:["铁男","MOD","铁手"], Morgana:["莫甘娜","堕落天使"], Nami:["娜美"],
+    Nasus:["狗头","沙漠死神"], Nautilus:["泰坦","深海泰坦"], Neeko:["妮蔻","变身女"],
+    Nidalee:["豹女"], Nilah:["尼拉"], Nocturne:["梦魇","魔腾"], Nunu:["雪人","努努"],
+    Olaf:["奥拉夫","狂战士"], Orianna:["发条"], Ornn:["奥恩","打铁","弗雷尔卓德之心"],
+    Pantheon:["潘森","斯巴达"], Poppy:["波比","铁锤"], Pyke:["派克","开膛手"],
+    Qiyana:["奇亚娜","元素女皇"], Quinn:["鸟","奎因"], Rakan:["洛"], Rammus:["龟","armadillo"],
+    RekSai:["挖掘机","虚空遁地兽"], Rell:["芮尔","铁娘子"], Renata:["奶奶","炼金男爵"],
+    Renekton:["鳄鱼"], Rengar:["狮子狗"], Riven:["锐雯","瑞雯","放逐之刃"],
+    Rumble:["兰博","机甲"], Ryze:["瑞兹","符文法师"], Samira:["萨米拉","沙漠玫瑰"],
+    Sejuani:["猪妹"], Senna:["赛娜","涤魂圣枪"], Seraphine:["萨勒芬妮","小艾","歌手"],
+    Sett:["腕豪","瑟提"], Shaco:["小丑"], Shen:["慎","影子"], Shyvana:["龙女"],
+    Singed:["炼金","炼金术士"], Sion:["塞恩","亡灵战神"], Sivir:["轮子妈","希维尔"],
+    Skarner:["蝎子"], Smolder:["小龙","龙宝宝"], Sona:["琴女","娑娜"], Soraka:["奶妈","星妈"],
+    Swain:["乌鸦","诺克萨斯大将军"], Sylas:["塞拉斯","解脱者"], Syndra:["球女","暗黑元首"],
+    TahmKench:["蛤蟆","河王"], Taliyah:["岩雀"], Talon:["泰隆","刀锋之影"],
+    Taric:["宝石","瓦洛兰之盾"], Teemo:["提莫","蘑菇"], Thresh:["锤石","魂锁典狱长"],
+    Tristana:["小炮","麦林炮手"], Trundle:["巨魔","巨魔之王"], Tryndamere:["蛮王","无尽之刃"],
+    TwistedFate:["卡牌","TF","卡牌大师"], Twitch:["老鼠","瘟疫之源"], Udyr:["熊猫","兽灵行者"],
+    Urgot:["螃蟹","无畏战车"], Varus:["韦鲁斯","滑板鞋","惩戒之箭"], Vayne:["VN","薇恩","暗夜猎手"],
+    Veigar:["小法师","帽子","邪恶小法师"], Velkoz:["眼睛","大眼","虚空之眼"], Vex:["薇古丝","忧郁"],
+    Vi:["蔚","拳头"], Viego:["破败王","佩吉"], Viktor:["维克托","机械先驱"],
+    Vladimir:["吸血鬼","弗拉基米尔"], Volibear:["狗熊","雷熊","冰川之怒"], Warwick:["狼人","WW"],
+    Xayah:["霞"], Xerath:["泽拉斯","炮台"], XinZhao:["赵信","三叉戟"],
+    Yasuo:["亚索","托儿索","面筋","疾风剑豪","哈撒给"], Yone:["永恩","哥哥"],
+    Yorick:["掘墓","约里克","墓园"], Yuumi:["猫","悠米"], Zac:["扎克","生化魔人"],
+    Zed:["劫","快乐风男","影流之主"], Zeri:["泽丽","电女"], Ziggs:["炸弹人","爆破鬼才"],
+    Zilean:["时光老头","基兰"], Zoe:["佐伊","暮光星灵"], Zyra:["植物","花","婕拉"],
+  },
+
+  /* ---------- 打法归类（决定推荐符文；未列出的英雄按职业自动推断） ---------- */
+  build: {
+    // 上单
+    Aatrox:"bruiser", Camille:"bruiser", Darius:"bruiser", DrMundo:"tank", Fiora:"bruiser",
+    Gangplank:"bruiser", Garen:"bruiser", Gnar:"bruiser", Gwen:"bruiser", Illaoi:"bruiser",
+    Irelia:"bruiser", Jax:"bruiser", Jayce:"adc_burst", KSante:"tank", Kayle:"adc_dps",
+    Kled:"bruiser", Malphite:"tank", Maokai:"tank", Mordekaiser:"bruiser", Nasus:"bruiser",
+    Olaf:"bruiser", Ornn:"tank", Pantheon:"bruiser", Poppy:"tank", Quinn:"adc_burst",
+    Renekton:"bruiser", Riven:"bruiser", Rumble:"ap_poke", Sett:"bruiser", Shen:"tank",
+    Singed:"tank", Sion:"tank", Teemo:"ap_poke", Tryndamere:"bruiser", Urgot:"bruiser",
+    Volibear:"bruiser", Yorick:"bruiser", Gragas:"ap_poke", Kennen:"ap_poke", Vladimir:"ap_scale",
+    Ambessa:"bruiser",
+    // 打野
+    Amumu:"tank", Belveth:"bruiser", Briar:"bruiser", Diana:"assassin_ap", Ekko:"assassin_ap",
+    Elise:"ap_poke", Evelynn:"assassin_ap", Fiddlesticks:"ap_poke", Graves:"bruiser", Hecarim:"bruiser",
+    JarvanIV:"bruiser", Karthus:"ap_scale", Kayn:"bruiser", Khazix:"assassin_ad", Kindred:"adc_dps",
+    LeeSin:"bruiser", Lillia:"ap_poke", MasterYi:"adc_dps", Nidalee:"ap_poke", Nocturne:"assassin_ad",
+    Nunu:"tank", Rammus:"tank", RekSai:"bruiser", Rengar:"assassin_ad", Sejuani:"tank",
+    Shaco:"assassin_ad", Shyvana:"bruiser", Skarner:"tank", Trundle:"bruiser", Udyr:"bruiser",
+    Vi:"bruiser", Viego:"bruiser", Warwick:"bruiser", Zac:"tank",
+    // 中单
+    Ahri:"ap_poke", Akali:"assassin_ap", Akshan:"adc_burst", Anivia:"ap_poke", Annie:"ap_poke",
+    AurelionSol:"ap_poke", Azir:"ap_poke", Cassiopeia:"ap_poke", Corki:"adc_burst", Fizz:"assassin_ap",
+    Galio:"tank", Hwei:"ap_poke", Kassadin:"ap_scale", Katarina:"assassin_ap", Leblanc:"assassin_ap",
+    Lissandra:"ap_poke", Lux:"ap_poke", Malzahar:"ap_poke", Mel:"ap_poke", Naafiri:"assassin_ad",
+    Orianna:"ap_poke", Qiyana:"assassin_ad", Ryze:"ap_poke", Smolder:"adc_dps", Swain:"ap_poke",
+    Sylas:"bruiser", Syndra:"ap_poke", Taliyah:"ap_poke", Talon:"assassin_ad", TwistedFate:"ap_poke",
+    Veigar:"ap_scale", Velkoz:"ap_poke", Vex:"ap_poke", Viktor:"ap_poke", Xerath:"ap_poke",
+    Yone:"bruiser", Zed:"assassin_ad", Zoe:"ap_poke",
+    // 射手
+    Aphelios:"adc_dps", Ashe:"adc_burst", Caitlyn:"adc_burst", Draven:"adc_burst", Ezreal:"adc_burst",
+    Jhin:"adc_burst", Jinx:"adc_dps", Kaisa:"adc_dps", Kalista:"adc_dps", KogMaw:"adc_dps",
+    Lucian:"adc_burst", MissFortune:"adc_burst", Nilah:"bruiser", Samira:"adc_dps", Senna:"adc_burst",
+    Sivir:"adc_dps", Tristana:"adc_dps", Twitch:"adc_dps", Varus:"adc_burst", Vayne:"adc_dps",
+    Xayah:"adc_dps", Yunara:"adc_dps", Zeri:"adc_dps",
+    // 辅助
+    Alistar:"tank", Bard:"enchanter", Blitzcrank:"tank", Braum:"tank", Janna:"enchanter",
+    Karma:"enchanter", Leona:"tank", Lulu:"enchanter", Milio:"enchanter", Morgana:"ap_poke",
+    Nami:"enchanter", Nautilus:"tank", Pyke:"assassin_ad", Rakan:"enchanter", Rell:"tank",
+    Renata:"enchanter", Seraphine:"enchanter", Sona:"enchanter", Soraka:"enchanter", Taric:"enchanter",
+    Thresh:"tank", Yuumi:"enchanter", Zilean:"enchanter", Zyra:"ap_poke", Brand:"ap_poke",
+    // 其它
+    Heimerdinger:"ap_poke", Neeko:"ap_poke", Ziggs:"ap_poke", Ivern:"enchanter", TahmKench:"tank",
+  },
+
+  /* ---------- 打法中文名 ---------- */
+  buildLabel: {
+    bruiser:"战士 · 持续作战", adc_dps:"射手 · 持续输出", adc_burst:"射手 · 爆发普攻",
+    assassin_ad:"AD 刺客 · 切入爆发", assassin_ap:"AP 刺客 · 切入爆发",
+    ap_poke:"法师 · 消耗爆发", ap_scale:"法师 · 后期收割", tank:"坦克 · 前排开团",
+    enchanter:"辅助 · 增益保护",
+  },
+
+  /* ---------- 符文模板（按英文 key 引用，运行时取官方图标/中文名） ---------- */
+  runeBuilds: {
+    bruiser:     { primary:"Precision",  keystone:"Conqueror",     runes:["Triumph","LegendAlacrity","LastStand"],       secondary:"Resolve",     sub:["SecondWind","Unflinching"],     shards:["攻击速度","适应之力","护甲 / 魔抗"] },
+    adc_dps:     { primary:"Precision",  keystone:"LethalTempo",   runes:["PresenceOfMind","LegendAlacrity","CoupDeGrace"],secondary:"Domination",  sub:["TasteOfBlood","RelentlessHunter"],shards:["攻击速度","适应之力","护甲 / 魔抗"] },
+    adc_burst:   { primary:"Precision",  keystone:"PressTheAttack",runes:["PresenceOfMind","LegendAlacrity","CoupDeGrace"],secondary:"Domination",  sub:["TasteOfBlood","RelentlessHunter"],shards:["攻击速度","适应之力","护甲 / 魔抗"] },
+    assassin_ad: { primary:"Domination", keystone:"Electrocute",   runes:["SuddenImpact","GrislyMementos","RelentlessHunter"],secondary:"Precision",sub:["Triumph","CoupDeGrace"],        shards:["适应之力","适应之力","护甲 / 魔抗"] },
+    assassin_ap: { primary:"Domination", keystone:"Electrocute",   runes:["SuddenImpact","GrislyMementos","UltimateHunter"],secondary:"Sorcery",   sub:["ManaflowBand","Scorch"],        shards:["适应之力","适应之力","魔抗 / 护甲"] },
+    ap_poke:     { primary:"Sorcery",    keystone:"ArcaneComet",   runes:["ManaflowBand","Transcendence","Scorch"],       secondary:"Inspiration", sub:["BiscuitDelivery","CosmicInsight"],shards:["适应之力","适应之力","魔抗 / 护甲"] },
+    ap_scale:    { primary:"Domination", keystone:"DarkHarvest",   runes:["CheapShot","GrislyMementos","UltimateHunter"], secondary:"Sorcery",     sub:["ManaflowBand","GatheringStorm"],shards:["适应之力","适应之力","魔抗 / 护甲"] },
+    tank:        { primary:"Resolve",    keystone:"Aftershock",    runes:["FontOfLife","BonePlating","Overgrowth"],       secondary:"Sorcery",     sub:["ManaflowBand","Transcendence"], shards:["适应之力","护甲","魔抗"] },
+    enchanter:   { primary:"Sorcery",    keystone:"SummonAery",    runes:["ManaflowBand","Transcendence","GatheringStorm"],secondary:"Inspiration",sub:["BiscuitDelivery","CosmicInsight"],shards:["适应之力","适应之力","魔抗 / 护甲"] },
+  },
+});
+
+/* ---------- 排位综合强度评级（人工整理 · 参考，非实时）----------
+ * S=版本强势  A=强力  B=中上  C=中规中矩  D=偏弱
+ * 想自己调，改这里即可。
+ */
+Object.assign(window.LOL_DATA, {
+  rankTier: {
+    // 上单
+    Aatrox:"A", Ambessa:"S", Camille:"A", Darius:"A", DrMundo:"B", Fiora:"A", Gangplank:"B",
+    Garen:"B", Gnar:"B", Gwen:"A", Illaoi:"B", Irelia:"B", Jax:"A", Jayce:"B", KSante:"A",
+    Kayle:"B", Kled:"C", Malphite:"B", Maokai:"A", Mordekaiser:"A", Nasus:"B", Olaf:"B",
+    Ornn:"A", Pantheon:"B", Poppy:"B", Quinn:"C", Renekton:"B", Riven:"B", Rumble:"A",
+    Sett:"A", Shen:"B", Singed:"C", Sion:"B", Teemo:"C", Tryndamere:"B", Urgot:"B",
+    Volibear:"B", Yorick:"B", Gragas:"B", Kennen:"B", Vladimir:"B", Sylas:"A", Yone:"A",
+    // 打野
+    Amumu:"B", Belveth:"B", Briar:"A", Diana:"A", Ekko:"A", Elise:"B", Evelynn:"B",
+    Fiddlesticks:"B", Graves:"A", Hecarim:"A", JarvanIV:"B", Karthus:"B", Kayn:"A",
+    Khazix:"A", Kindred:"B", LeeSin:"B", Lillia:"A", MasterYi:"B", Nidalee:"C", Nocturne:"B",
+    Nunu:"B", Rammus:"B", RekSai:"B", Rengar:"B", Sejuani:"A", Shaco:"B", Shyvana:"B",
+    Skarner:"B", Trundle:"B", Udyr:"B", Vi:"B", Viego:"S", Warwick:"B", Zac:"A",
+    // 中单
+    Ahri:"S", Akali:"A", Akshan:"B", Anivia:"B", Annie:"B", AurelionSol:"B", Azir:"B",
+    Cassiopeia:"B", Corki:"B", Fizz:"B", Galio:"B", Hwei:"A", Kassadin:"B", Katarina:"A",
+    Leblanc:"B", Lissandra:"B", Lux:"B", Malzahar:"B", Mel:"A", Naafiri:"B", Orianna:"A",
+    Qiyana:"B", Ryze:"C", Smolder:"B", Swain:"B", Syndra:"A", Taliyah:"B", Talon:"B",
+    TwistedFate:"B", Veigar:"B", Velkoz:"B", Vex:"B", Viktor:"A", Xerath:"A", Zed:"A", Zoe:"B",
+    // 射手
+    Aphelios:"B", Ashe:"A", Caitlyn:"A", Draven:"B", Ezreal:"A", Jhin:"A", Jinx:"S",
+    Kaisa:"A", Kalista:"C", KogMaw:"B", Lucian:"B", MissFortune:"B", Nilah:"B", Samira:"B",
+    Senna:"A", Sivir:"B", Tristana:"B", Twitch:"B", Varus:"A", Vayne:"B", Xayah:"A",
+    Yunara:"B", Zeri:"B",
+    // 辅助
+    Alistar:"B", Bard:"B", Blitzcrank:"B", Braum:"B", Janna:"A", Karma:"A", Leona:"A",
+    Lulu:"A", Milio:"A", Morgana:"A", Nami:"A", Nautilus:"A", Pyke:"B", Rakan:"A", Rell:"A",
+    Renata:"A", Seraphine:"A", Sona:"B", Soraka:"A", Taric:"B", Thresh:"S", Yuumi:"B",
+    Zilean:"B", Zyra:"A", Brand:"A",
+    // 其它
+    Heimerdinger:"B", Neeko:"B", Ziggs:"B", Ivern:"B", TahmKench:"B",
+  },
+});
+
+</script>
+<script>
+/* 打包的符文 + 海克斯强化数据（不依赖联网，国内可用） */
+window.LOL_RUNES = {"GlacialAugment":{"icon":"perk-images/Styles/Inspiration/GlacialAugment/GlacialAugment.png","name":"å°å·å¢å¹\u0085","id":8351,"treeKey":"Inspiration"},"RelentlessHunter":{"icon":"perk-images/Styles/Domination/RelentlessHunter/RelentlessHunter.png","name":"æ æ\u0085çæ","id":8105,"treeKey":"Domination"},"ShieldBash":{"icon":"perk-images/Styles/Resolve/MirrorShell/MirrorShell.png","name":"æ¤ç¾çå»","id":8401,"treeKey":"Resolve"},"TasteOfBlood":{"icon":"perk-images/Styles/Domination/TasteOfBlood/GreenTerror_TasteOfBlood.png","name":"è¡ä¹æ»å³","id":8139,"treeKey":"Domination"},"HailOfBlades":{"icon":"perk-images/Styles/Domination/HailOfBlades/HailOfBlades.png","name":"ä¸å","id":9923,"treeKey":"Domination"},"FirstStrike":{"icon":"perk-images/Styles/Inspiration/FirstStrike/FirstStrike.png","name":"å\u0085æ»","id":8369,"treeKey":"Inspiration"},"Transcendence":{"icon":"perk-images/Styles/Sorcery/Transcendence/Transcendence.png","name":"è¶\u0085ç¶","id":8210,"treeKey":"Sorcery"},"SummonAery":{"icon":"perk-images/Styles/Sorcery/SummonAery/SummonAery.png","name":"å¬å¤ï¼è¾é»","id":8214,"treeKey":"Sorcery"},"Triumph":{"icon":"perk-images/Styles/Precision/Triumph.png","name":"å¯æ","id":9111,"treeKey":"Precision"},"AbsorbLife":{"icon":"perk-images/Styles/Precision/AbsorbLife/AbsorbLife.png","name":"å¸æ¶çå½å","id":9101,"treeKey":"Precision"},"PresenceOfMind":{"icon":"perk-images/Styles/Precision/PresenceOfMind/PresenceOfMind.png","name":"æ°å®ç¥é²","id":8009,"treeKey":"Precision"},"JackOfAllTrades":{"icon":"perk-images/Styles/Inspiration/JackOfAllTrades/JackofAllTrades2.png","name":"å¤é¢æ","id":8316,"treeKey":"Inspiration"},"DeathfireTouch":{"icon":"perk-images/Styles/Sorcery/DeathfireTouch/DEATHFIRE_TOUCH_KEYSTONE.png","name":"å¥ç«ä¹è§¦","id":8992,"treeKey":"Sorcery"},"Demolish":{"icon":"perk-images/Styles/Resolve/Demolish/Demolish.png","name":"çç ´","id":8446,"treeKey":"Resolve"},"ApproachVelocity":{"icon":"perk-images/Styles/Resolve/ApproachVelocity/ApproachVelocity.png","name":"è¡è¿éç","id":8410,"treeKey":"Inspiration"},"Unflinching":{"icon":"perk-images/Styles/Sorcery/Unflinching/Unflinching.png","name":"åå®","id":8242,"treeKey":"Resolve"},"FontOfLife":{"icon":"perk-images/Styles/Resolve/FontOfLife/FontOfLife.png","name":"çå½æºæ³","id":8463,"treeKey":"Resolve"},"TimeWarpTonic":{"icon":"perk-images/Styles/Inspiration/TimeWarpTonic/TimeWarpTonic.png","name":"æ¶é´æ­æ²è¡¥è¯","id":8352,"treeKey":"Inspiration"},"PerfectTiming":{"icon":"perk-images/Styles/Inspiration/PerfectTiming/AlchemistCabinet.png","name":"ä¸éè¡¥è¯","id":8313,"treeKey":"Inspiration"},"CheapShot":{"icon":"perk-images/Styles/Domination/CheapShot/CheapShot.png","name":"æ¶æä¸­ä¼¤","id":8126,"treeKey":"Domination"},"TreasureHunter":{"icon":"perk-images/Styles/Domination/TreasureHunter/TreasureHunter.png","name":"å¯»å®çäºº","id":8135,"treeKey":"Domination"},"Overgrowth":{"icon":"perk-images/Styles/Resolve/Overgrowth/Overgrowth.png","name":"è¿åº¦çé¿","id":8451,"treeKey":"Resolve"},"Guardian":{"icon":"perk-images/Styles/Resolve/Guardian/Guardian.png","name":"å®æ¤è\u0085","id":8465,"treeKey":"Resolve"},"ArcaneComet":{"icon":"perk-images/Styles/Sorcery/ArcaneComet/ArcaneComet.png","name":"å¥¥æ¯å½æ","id":8229,"treeKey":"Sorcery"},"GrislyMementos":{"icon":"perk-images/Styles/Domination/GrislyMementos/GrislyMementos.png","name":"å¯æçºªå¿µå","id":8140,"treeKey":"Domination"},"ManaflowBand":{"icon":"perk-images/Styles/Sorcery/ManaflowBand/ManaflowBand.png","name":"æ³åæµç³»å¸¦","id":8226,"treeKey":"Sorcery"},"BiscuitDelivery":{"icon":"perk-images/Styles/Inspiration/BiscuitDelivery/BiscuitDelivery.png","name":"é¥¼å¹²é\u0085é","id":8345,"treeKey":"Inspiration"},"GraspOfTheUndying":{"icon":"perk-images/Styles/Resolve/GraspOfTheUndying/GraspOfTheUndying.png","name":"ä¸ç­ä¹æ¡","id":8437,"treeKey":"Resolve"},"SixthSense":{"icon":"perk-images/Styles/Domination/SixthSense/SixthSense.png","name":"ç¬¬å\u0085­æ","id":8137,"treeKey":"Domination"},"Celerity":{"icon":"perk-images/Styles/Sorcery/Celerity/CelerityTemp.png","name":"è¿\u0085æ·","id":8234,"treeKey":"Sorcery"},"BonePlating":{"icon":"perk-images/Styles/Resolve/BonePlating/BonePlating.png","name":"éª¸éª¨éå±","id":8473,"treeKey":"Resolve"},"LegendAlacrity":{"icon":"perk-images/Styles/Precision/LegendAlacrity/LegendAlacrity.png","name":"ä¼ è¯´ï¼æ¬¢æ¬£","id":9104,"treeKey":"Precision"},"CoupDeGrace":{"icon":"perk-images/Styles/Precision/CoupDeGrace/CoupDeGrace.png","name":"æ©èµè§£è±","id":8014,"treeKey":"Precision"},"PressTheAttack":{"icon":"perk-images/Styles/Precision/PressTheAttack/PressTheAttack.png","name":"å¼ºæ»","id":8005,"treeKey":"Precision"},"UltimateHunter":{"icon":"perk-images/Styles/Domination/UltimateHunter/UltimateHunter.png","name":"ç»æçäºº","id":8106,"treeKey":"Domination"},"LegendHaste":{"icon":"perk-images/Styles/Precision/LegendHaste/LegendHaste.png","name":"ä¼ è¯´ï¼æ¥é","id":9105,"treeKey":"Precision"},"CosmicInsight":{"icon":"perk-images/Styles/Inspiration/CosmicInsight/CosmicInsight.png","name":"æçæ´æ","id":8347,"treeKey":"Inspiration"},"LegendBloodline":{"icon":"perk-images/Styles/Precision/LegendBloodline/LegendBloodline.png","name":"ä¼ è¯´ï¼è¡ç»","id":9103,"treeKey":"Precision"},"PhaseRush":{"icon":"perk-images/Styles/Sorcery/PhaseRush/StormraidersSurgeRuneIcon2.png","name":"é£æ´æ è¢­è\u0085ççæ¶","id":8230,"treeKey":"Sorcery"},"CutDown":{"icon":"perk-images/Styles/Precision/CutDown/CutDown.png","name":"ç å","id":8017,"treeKey":"Precision"},"Conditioning":{"icon":"perk-images/Styles/Resolve/Conditioning/Conditioning.png","name":"è°è","id":8429,"treeKey":"Resolve"},"Scorch":{"icon":"perk-images/Styles/Sorcery/Scorch/Scorch.png","name":"ç¦ç¼","id":8237,"treeKey":"Sorcery"},"HextechFlashtraption":{"icon":"perk-images/Styles/Inspiration/HextechFlashtraption/HextechFlashtraption.png","name":"æµ·å\u0085æ¯ç§æéªç°ç½ç½","id":8306,"treeKey":"Inspiration"},"MagicalFootwear":{"icon":"perk-images/Styles/Inspiration/MagicalFootwear/MagicalFootwear.png","name":"ç¥å¥ä¹é","id":8304,"treeKey":"Inspiration"},"SecondWind":{"icon":"perk-images/Styles/Resolve/SecondWind/SecondWind.png","name":"å¤èä¹é£","id":8444,"treeKey":"Resolve"},"NullifyingOrb":{"icon":"perk-images/Styles/Sorcery/NullifyingOrb/Axiom_Arcanist.png","name":"å\u0085¬çç§æ¯","id":8224,"treeKey":"Sorcery"},"DeepWard":{"icon":"perk-images/Styles/Domination/DeepWard/DeepWard.png","name":"æ·±å\u0085¥å®å«","id":8141,"treeKey":"Domination"},"Revitalize":{"icon":"perk-images/Styles/Resolve/Revitalize/Revitalize.png","name":"å¤è","id":8453,"treeKey":"Resolve"},"SuddenImpact":{"icon":"perk-images/Styles/Domination/SuddenImpact/SuddenImpact.png","name":"çç¶å²å»","id":8143,"treeKey":"Domination"},"CashBack":{"icon":"perk-images/Styles/Inspiration/CashBack/CashBack2.png","name":"è¿ç°","id":8321,"treeKey":"Inspiration"},"UnsealedSpellbook":{"icon":"perk-images/Styles/Inspiration/UnsealedSpellbook/UnsealedSpellbook.png","name":"å¯å°çç§ç±","id":8360,"treeKey":"Inspiration"},"Electrocute":{"icon":"perk-images/Styles/Domination/Electrocute/Electrocute.png","name":"çµå","id":8112,"treeKey":"Domination"},"LethalTempo":{"icon":"perk-images/Styles/Precision/LethalTempo/LethalTempoTemp.png","name":"è´å½èå¥","id":8008,"treeKey":"Precision"},"DarkHarvest":{"icon":"perk-images/Styles/Domination/DarkHarvest/DarkHarvest.png","name":"é»ææ¶å²","id":8128,"treeKey":"Domination"},"LastStand":{"icon":"perk-images/Styles/Sorcery/LastStand/LastStand.png","name":"åæ¯\u0085ä¸å","id":8299,"treeKey":"Precision"},"NimbusCloak":{"icon":"perk-images/Styles/Sorcery/NimbusCloak/6361.png","name":"çµå\u0085æ«é£","id":8275,"treeKey":"Sorcery"},"Aftershock":{"icon":"perk-images/Styles/Resolve/VeteranAftershock/VeteranAftershock.png","name":"ä½é","id":8439,"treeKey":"Resolve"},"FleetFootwork":{"icon":"perk-images/Styles/Precision/FleetFootwork/FleetFootwork.png","name":"è¿\u0085æ·æ­¥æ³","id":8021,"treeKey":"Precision"},"AbsoluteFocus":{"icon":"perk-images/Styles/Sorcery/AbsoluteFocus/AbsoluteFocus.png","name":"ç»å¯¹ä¸æ³¨","id":8233,"treeKey":"Sorcery"},"GatheringStorm":{"icon":"perk-images/Styles/Sorcery/GatheringStorm/GatheringStorm.png","name":"é£æ´èé","id":8236,"treeKey":"Sorcery"},"Conqueror":{"icon":"perk-images/Styles/Precision/Conqueror/Conqueror.png","name":"å¾æè\u0085","id":8010,"treeKey":"Precision"},"Waterwalking":{"icon":"perk-images/Styles/Sorcery/Waterwalking/Waterwalking.png","name":"æ°´ä¸è¡èµ°","id":8232,"treeKey":"Sorcery"}};
+window.LOL_TREES = {"Sorcery":{"icon":"perk-images/Styles/7202_Sorcery.png","name":"å·«æ¯"},"Resolve":{"icon":"perk-images/Styles/7204_Resolve.png","name":"åå³"},"Domination":{"icon":"perk-images/Styles/7200_Domination.png","name":"ä¸»å®°"},"Precision":{"icon":"perk-images/Styles/7201_Precision.png","name":"ç²¾å¯"},"Inspiration":{"icon":"perk-images/Styles/7203_Whimsy.png","name":"å¯è¿ª"}};
+window.LOL_AUGMENTS = [{"id":93,"name":"ç­èº«å¨ä½","desc":"è·å¾å¬å¤å¸æè½\u003cspellName\u003eç­èº«å¨ä½\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003eå¼å¯¼ä½ çå\u0085å¨ä¹èï¼æ¯ç§ä½¿ä½ çä¼¤å®³æå2%ï¼è³å¤è³@MaxStacks@%ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/warmuproutine_small.png"},{"id":89,"name":"éå\u0085¥æå½±","desc":"è·å¾å¬å¤å¸æè½\u003cspellName\u003eéå\u0085¥æå½±\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003e\u003crules\u003e\u003cspellName\u003eéå\u0085¥æå½±\u003c/spellName\u003eä¼ä½¿ä½ è¿å\u0085¥\u003ckeywordStealth\u003eæ½è¡\u003c/keywordStealth\u003eç¶æã\u003c/rules\u003e","rarity":1,"icon":"assets/ux/cherry/augments/icons/vanish_small.png"},{"id":347,"name":"ç¼éç§æçº¯åå¨","desc":"ä½ é æçææä¼¤å®³é½ä¼æ½å \u003ckeyword\u003eéä¼¤\u003c/keyword\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/chemtechpurifier_small.png"},{"id":359,"name":"ç¾çµçæ¯","desc":"è·å¾@RevivesToGain@æ¬¡é¢å¤å¤æ´»ï¼å¹¶ä¸å°å¤æ´»æéçæ¶é´ååã","rarity":4,"icon":"assets/ux/cherry/augments/icons/lamb_small.png"},{"id":323,"name":"å°ç±ä¸å¤´ç¬","desc":"è·å¾\u003cspellName\u003eä¸å\u003c/spellName\u003eå\u003cspellName\u003eå¼ºæ»\u003c/spellName\u003eåºç³ç¬¦æã","rarity":2,"icon":"assets/ux/cherry/augments/icons/cerberus_small.png"},{"id":340,"name":"è·å¾ä¸ä¸ªæ£±å½©é¶å±æ§é»é å¨","desc":"è·å¾ä¸ä¸ª\u003ckeywordMajor\u003e%i:StatAnvil%æ£±å½©é¶å±æ§é»é å¨\u003c/keywordMajor\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/crafting_prisstatanvil_small.png"},{"id":87,"name":"å°é£","desc":"ä½ çæ»å»ä¼å¯¹ä¸ä¸ªé¢å¤ç®æ åå°ä¸æ ¹å¼©ç®­ï¼è¿ä¸ªå¼©ç®­ä¼é æååè¿çä¼¤å®³å¹¶æ½å {{ Item_Keyword_OnHit }}ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/typhoon_small.png"},{"id":108,"name":"èªææ¯ç­","desc":"æ¯@BombDelay@ç§\u003ckeywordMajor\u003eèªå¨æ½æ¾\u003c/keywordMajor\u003eï¼å¨ä½ çèº«ä¸é»éä¸ä¸ªç¸å¼¹ï¼å¨çç¸æ¶ï¼å¯¹éè¿çæäººä»¬é æ\u003ctrueDamage\u003eå·¨é¢çå®ä¼¤å®³\u003c/trueDamage\u003eå\u003cstatus\u003eå»é£\u003c/status\u003eææã","rarity":0,"icon":"assets/ux/cherry/augments/icons/selfdestruct_small.png"},{"id":120,"name":"è¶\u0085è¶æ­»äº¡çæå³","desc":"å¨ä½ æ¯ååç¬¬ä¸æ¬¡å³å°éµäº¡æ¶ï¼è½¬è\u003cscaleHealth\u003eåæ»¡çå½å¼\u003c/scaleHealth\u003eå¹¶æç»­\u003cstatus\u003eè¡°å\u003c/status\u003eã\u003cbr\u003e\u003cbr\u003eå¨ä½ ççå½å¼æ­£å¨\u003cstatus\u003eè¡°å\u003c/status\u003eçç¶æä¸ï¼\u003ckeywordMajor\u003eåä¸å»æ\u003c/keywordMajor\u003eä¸åææ¹è±éåï¼ä¼ä½¿\u003cstatus\u003eè¡°å\u003c/status\u003eåæ­¢ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/servebeyonddeath_small.png"},{"id":327,"name":"ä¸ç­å®æ¤","desc":"å¨éè¿ãä¸è½ä¹å¿ãå¤æ´»æ¶ï¼äºæå¯¹éè¿çæäººé æåºäºç®æ å½åçå½å¼çä¼¤å®³ï¼å¹¶å»éææç®æ ï¼åæ¶èªèº«ä¸ä¼åå°æ¥èªçæåç¯ä¹å¤çæäººæé æçä¼¤å®³å¹¶ä¸è·å¾ç­æççåæ§ç§»å¨éåº¦ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/dawnbringersresolve_small.png"},{"id":66,"name":"éå­è®¡ç®","desc":"å¨ææ§å°å¨ä½ å¨å´\u003ckeywordMajor\u003eèªå¨æ½æ¾\u003c/keywordMajor\u003eä¸æ¬¡å·¨åæ©å»ï¼é æ\u003cphysicalDamage\u003eç©çä¼¤å®³\u003c/physicalDamage\u003eã\u003cbr\u003e\u003cbr\u003eè¢«å¤æ²¿å½ä¸­çæäººä¼è¢«\u003cstatus\u003eåé\u003c/status\u003eãåå°é¢å¤\u003cphysicalDamage\u003eä¼¤å®³\u003c/physicalDamage\u003eãå¹¶\u003chealing\u003eæ²»ç\u003c/healing\u003eä½ ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/quantumcomputing_small.png"},{"id":23,"name":"é­é¬¼ä¹è","desc":"è·å¾\u003cspellName\u003eè¿\u0085æ·æ­¥æ³\u003c/spellName\u003eå\u003cspellName\u003eä¸ç­ä¹æ¡\u003c/spellName\u003eåºç³ç¬¦æã\u003cbr\u003e","rarity":1,"icon":"assets/ux/cherry/augments/icons/demonsdance_small.png"},{"id":21,"name":"é²å¾¡è®¡ç¥","desc":"è·å¾å¬å¤å¸æè½\u003cspellName\u003eé²å¾¡è®¡ç¥\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003e\u003crules\u003e\u003cspellName\u003eé²å¾¡è®¡ç¥\u003c/spellName\u003eä¼å¯¹ä½ çæéæ½æ¾\u003cspellName\u003eå±é\u003c/spellName\u003eå\u003cspellName\u003eæ²»çæ¯\u003c/spellName\u003eã\u003c/rules\u003e","rarity":1,"icon":"assets/ux/cherry/augments/icons/defensivemaneuvers_small.png"},{"id":243,"name":"è´¨åï¼æ··æ²","desc":"è·å¾\u003ckeywordMajor\u003e@AugmentsToGrantToolTipOnly@ä¸ªéæº%i:Augment%å¼ºåç¬¦æ\u003c/keywordMajor\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/transmutechaos_small.png"},{"id":14,"name":"ä¸å±å¸æº","desc":"ä½ éèº«äºä½ çååï¼å¹¶ä¸æ æ³èªè¡ç§»å¨ã\u003cbr\u003e\u003cbr\u003eä½ ç\u003cspeed\u003eé¢å¤ç§»å¨éåº¦\u003c/speed\u003eè¿ä¼æä¾ç»ä½ çååï¼å¹¶ä¸ä½ è·å¾\u003cscaleAbilityHaste\u003eæè½æ¥é\u003c/scaleAbilityHaste\u003eå\u003cattackSpeed\u003eæ»å»éåº¦\u003c/attackSpeed\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/chauffeur_small.png"},{"id":129,"name":"ç¥å°æ³å¸","desc":"ä½ çæ»å»é æç¸å½äºä½ \u003cscaleAP\u003e@APRatio*100@%æ³æ¯å¼ºåº¦\u003c/scaleAP\u003eçé¢å¤\u003cphysicalDamage\u003eç©çä¼¤å®³\u003c/physicalDamage\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/marksmage_small.png"},{"id":231,"name":"å\u0085æå®æè\u0085","desc":"æ¯å ç§ï¼æä½ çåå\u003ckeywordMajor\u003eèªå¨æ½æ¾\u003c/keywordMajor\u003eä¸éé²æ¤ä¹å\u0085ï¼ä¸ºä½ èªèº«åå\u0085¶éç»çååæä¾\u003cshield\u003eæ¤ç¾\u003c/shield\u003eï¼ç¶åæè¿å¹¶éå¤è¯¥ææã","rarity":1,"icon":"assets/ux/cherry/augments/icons/lightwarden_small.png"},{"id":351,"name":"å°éä¹é¤","desc":"é æä¼¤å®³æ¶ä¼ä½¿æäºº\u003cstatus\u003eåé\u003c/status\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/frozenmallet_small.png"},{"id":318,"name":"ä»»å¡ï¼ç¯çå¸½å­äºº","desc":"éæ±ï¼å¨ææç»ææ¶æ´ç@QuestThreshold@é¡¶å¸½å­ã\u003cbr\u003e\u003cbr\u003eå¥å±ï¼ä»æ¯é¡¶å¸½å­è·å¾\u003cscaleAF\u003eéåºä¹å\u003c/scaleAF\u003eã\u003cscaleArmor\u003eæ¤ç²\u003c/scaleArmor\u003eã\u003cscaleMR\u003eé­æ³ææ§\u003c/scaleMR\u003eã\u003cscaleTenacity\u003eé§æ§\u003c/scaleTenacity\u003eï¼ä»¥å\u003cspeed\u003eç§»å¨éåº¦\u003c/speed\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/mad_hatter_small.png"},{"id":6,"name":"å©ååå°å\u0085¹","desc":"è·å¾å¬å¤å¸æè½\u003cspellName\u003eå©ååå°å\u0085¹\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003e\u003crules\u003e\u003cspellName\u003eå©ååå°å\u0085¹\u003c/spellName\u003eä¼è®©ä½ è¿å\u0085¥ä¸å¯è¢«éåç¶æï¼å¨æ­¤æé´å¯¹æäººè¿è¡åå¤çªè¿å¹¶é æ@TotalHits@æ¬¡ä¼¤å®³ã\u003c/rules\u003e","rarity":2,"icon":"assets/ux/cherry/augments/icons/bladewaltz_small.png"},{"id":94,"name":"èªæ¿çºç²","desc":"å½ä¸ååæ¹è±éè·å°\u003cscaleHealth\u003e@AllyHealthThreshold*100@%çå½å¼\u003c/scaleHealth\u003eä»¥ä¸æ¶ï¼å°ä½ çä¸äºçå½å¼æ¢æ\u003cshield\u003eæ¤ç¾å¼\u003c/shield\u003eæ¥æä¾ç»ä½ çååã","rarity":1,"icon":"assets/ux/cherry/augments/icons/willingsacrifice_small.png"},{"id":308,"name":"ç«ç","desc":"\u003ckeywordMajor\u003eèªå¨æ½æ¾\u003c/keywordMajor\u003e\u003cbr\u003eè·å¾\u003cspeed\u003eç§»å¨éåº¦\u003c/speed\u003eå¹¶å¬å¤3éçç°ç¯ç»äºä½ ï¼çåè·ç¦»å\u0085ç¸è·æè¿çé£ä¸ªå¯è§è±éå¹¶é æ\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/firfox_small.png"},{"id":223,"name":"å¬å¤å¸é©æ°","desc":"ä½ ç\u003ckeywordMajor\u003eå¬å¤å¸æè½\u003c/keywordMajor\u003eè·å¾@BonusCharges@å±é¢å¤çå\u0085\u0085è½ã\u003cbr\u003e\u003cbr\u003e\u003cspellName\u003eéªç°\u003c/spellName\u003eæ¯ååé½ä¼éç½®ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/summonerrevolution_small.png"},{"id":44,"name":"å°å¯","desc":"ä½ ç\u003cstatus\u003eåé\u003c/status\u003eææå¯ä½¿\u003cspeed\u003eç§»å¨éåº¦\u003c/speed\u003eéä½é¢å¤ç@ExtraSlowAmount@ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/icecold_small.png"},{"id":214,"name":"æè½¬è³è","desc":"ä½ çæè½¬ç±»æè½è·å¾@SpinHaste@æè½æ¥éå¹¶ä¸å¤é æ@SpinDamageAmp*100@%ä¼¤å®³ï¼","rarity":0,"icon":"assets/ux/cherry/augments/icons/spintowin_small.png"},{"id":5,"name":"å·ä»¤ä¹æ","desc":"è·å¾å¬å¤å¸æè½\u003cspellName\u003eå·ä»¤ä¹æ\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003e\u003crules\u003e\u003cspellName\u003eå·ä»¤ä¹æ\u003c/spellName\u003eå¯ç­æå¢å¼ºä½ çåå\u003c/rules\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/bannerofcommand_small.png"},{"id":80,"name":"ä¼å¿é²å®","desc":"ä½ å¯ä»¥ä½¿ç¨ä½ ç\u003ccrit\u003eæ´å»å ç(æå¤§@MaxChance*100@%å ç)\u003c/crit\u003eæ¥è¿è¡\u003ccrit\u003eä¼å¿é²å¾¡\u003c/crit\u003eï¼ä½¿ä½ æä¸å®å çæ¥ä½¿æåä¼¤å®³éä½ã\u003cbr\u003e\u003cbr\u003eè·å¾\u003ccrit\u003e%i:scaleCrit%@CritChance*100@%æ´å»å ç\u003c/crit\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/tankitorleaveit_small.png"},{"id":342,"name":"ç­çº§ç±»å¼ºåç¬¦æ","desc":"ç§»é¤ä¸ä¸ª\u003ckeywordMajor\u003e%i:Augment%å¼ºåç¬¦æ\u003c/keywordMajor\u003eã\u003cbr\u003e\u003cbr\u003eè·å¾@AugmentLevelsToGrant@ä¸ªéæº\u003ckeywordMajor\u003e%i:AugmentLevel%å¼ºåç¬¦æç­çº§\u003c/keywordMajor\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/crafting_sellaug_small.png"},{"id":97,"name":"å·«å¸å¼æè","desc":"è·å¾%i:scaleAP%\u003cscaleAP\u003e@AP@æ³æ¯å¼ºåº¦\u003c/scaleAP\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/witchfulthinking_small.png"},{"id":154,"name":"ä»»å¡ï¼æµ·çé¿ç¦çåå£«","desc":"éæ±ï¼åä¸å»æ@TakedownsNeeded@æ¬¡ã\u003cbr\u003e\u003cbr\u003eå¥å±ï¼éé²é²","rarity":1,"icon":"assets/ux/cherry/augments/icons/quest_urfschampion_small.png"},{"id":369,"name":"æ¸´ææå","desc":"ç®ç¥­\u003cscaleHealth\u003eä½ ç@HealthReductionPercent@%æå¤§çå½å¼\u003c/scaleHealth\u003eç»å¡å§ã\u003cbr\u003e\u003cbr\u003eä½ çæ»ç®ç¥­éå°æåè³\u003cscaleHealth\u003e-@MaxHealthReduction@%æå¤§çå½å¼\u003c/scaleHealth\u003eã\u003cbr\u003e\u003cbr\u003eè·å¾\u003ckeywordMajor\u003e@AnvilsGranted@ä¸ªé»éé¶å±æ§é»é å¨\u003c/keywordMajor\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/power_small.png"},{"id":90,"name":"å¤ä»","desc":"{{ Cherry_Vengeance@TeamSize@_Summary }}","rarity":1,"icon":"assets/ux/cherry/augments/icons/vengeance_small.png"},{"id":348,"name":"å¤ºå½åå","desc":"é æä¼¤å®³æ¶é¢å¤é æ\u003cphysicalDamage\u003e@MaxHealthDamage*100@%æå¤§çå½å¼çç©çä¼¤å®³\u003c/physicalDamage\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/bloodrazor_small.png"},{"id":28,"name":"ä¾µè","desc":"å¯¹æäººé æä¼¤å®³æ¶ä¼æ½å ä¸å±æç»­@ShredDuration@ç§ä¸å¯å å ç\u003cscaleArmor\u003eæ¤ç²\u003c/scaleArmor\u003eå\u003cscaleMR\u003eé­æ³ææ§\u003c/scaleMR\u003eå»ç¢ææã ","rarity":0,"icon":"assets/ux/cherry/augments/icons/erosion_small.png"},{"id":226,"name":"å±æ§ï¼","desc":"è·å¾@AmountOfStatAnvils@ä¸ª%i:StatAnvil%ãå±æ§é»é å¨ãï¼","rarity":0,"icon":"assets/ux/cherry/augments/icons/stats_small.png"},{"id":54,"name":"ç©æ³çä¿®","desc":"ä½ çæ¯æ¬¡æ»å»ä¸ºä½ æä¾\u003cscaleAP\u003eæ³æ¯å¼ºåº¦\u003c/scaleAP\u003e{{ Item_Keyword_OnHit }}ï¼å¹¶ä¸ä½ çæ¯æ¬¡æè½ä¸ºä½ æä¾\u003cscaleAD\u003eæ»å»å\u003c/scaleAD\u003eï¼æç»­å°ææç»æã","rarity":2,"icon":"assets/ux/cherry/augments/icons/masterofduality_small.png"},{"id":51,"name":"ç¹äº®ä»ä»¬ï¼","desc":"æ¯ç¬¬4æ¬¡æ»å»é æé¢å¤\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003e{{ Item_Keyword_OnHit }}ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/lightemup_small.png"},{"id":72,"name":"ç½çé»æ","desc":"ä½ çæè½ä¼æ è®°æäººï¼ä½¿å\u0085¶å¨è¢«ä½ çååçä¸ä¸ä¸ªæ»å»ææè½å½ä¸­æ¶ä¼åå°é¢å¤\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/searingdawn_small.png"},{"id":136,"name":"æå·´æ","desc":"æ¯å½ä½ \u003cstatus\u003eå®èº«\u003c/status\u003eæ\u003cstatus\u003eç¼å°\u003c/status\u003eä¸ä¸ªæäººæ¶ï¼è·å¾æç»­å°ååç»æç\u003cscaleAF\u003e%i:miniAdaptiveForce%@AdaptiveForce@éåºä¹å\u003c/scaleAF\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/slaparound_small.png"},{"id":133,"name":"é­æ³é£å¼¹","desc":"ç¨ä¸ä¸ªæè½é æä¼¤å®³æ¶ï¼ä¼åå°@NumberOfMissiles@ä¸ªé­æ³é£å¼¹ï¼æ¯ä¸ªé æ\u003ctrueDamage\u003eç¾åæ¯æå¤§çå½å¼ççå®ä¼¤å®³\u003c/trueDamage\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/magicmissile_small.png"},{"id":135,"name":"æ³æ¯èé","desc":"ç¨æè½å½ä¸­æäººæ¶ä¼ä»ä½ çä½ç½®çæä¸ééåå½ä¸­æäººä½ç½®çéæ³¢ï¼æ¥é æ\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/spellwake_small.png"},{"id":193,"name":"æåä¹å","desc":"å¤ä¸ªå«æç¯ç»äºä½ ï¼å¯¹éç»çæäººä»¬é æ\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/centeroftheuniverse_small.png"},{"id":65,"name":"è¶\u0085å¡éªæ¶","desc":"å¨ä½ ç¨ä¸ä¸ªæè½å½ä¸­æäººæ¶æ°¸ä¹\u0085æä¾\u003cscaleAP\u003e@APPerProc@æ³æ¯å¼ºåº¦\u003c/scaleAP\u003eã\u003cbr\u003e\u003cbr\u003eå¦æå¨@RoundCounterForBonusAP@ååä¹åæ¿åï¼åè·å¾\u003cscaleAP\u003e@BonusAPForLatePick@æ³æ¯å¼ºåº¦\u003c/scaleAP\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/phenomenalevil_small.png"},{"id":180,"name":"è¶\u0085å¼ºå¤§è","desc":"å¨æ¯ä¸ªååå¼å§æ¶ï¼æ¯æ¥æ\u003cscaleAP\u003e%i:scaleAP% @AP@æ³æ¯å¼ºåº¦\u003c/scaleAP\u003eå°±ä¼è·å¾\u003cshield\u003e @ShieldBaseTooltip@æ¤ç¾å¼\u003c/shield\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/bigbrain_small.png"},{"id":92,"name":"ææ","desc":"ä½ çè£\u0085å¤ææåæç»­ä¼¤å®³ææå¯ä»¥\u003ccrit\u003eæ´å»\u003c/crit\u003eã\u003cbr\u003e\u003cbr\u003eè·å¾\u003ccrit\u003e%i:scaleCrit% @CritChance*100@%æ´å»å ç\u003c/crit\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/vulnerability_small.png"},{"id":10,"name":"ç®ç°","desc":"ä½ ä¼è¢«ä¸é¨å¤§ç®ç»åå°è¿ææä¸­ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/cannonfodder_small.png"},{"id":233,"name":"ç»æè½¬ç","desc":"å°\u003cspellName\u003eéªäºº\u003c/spellName\u003eæ¿æ¢æä¸ä¸ªéæºè±éç\u003cattention\u003eç»ææè½\u003c/attention\u003eã\u003cbr\u003e\u003cbr\u003eå¨æ½æ¾è¿ä¸ª\u003cattention\u003eç»ææè½\u003c/attention\u003eåï¼ä¼å°å®éæºæ¿æ¢ä¸ºå¦ä¸ä¸ª\u003cattention\u003eç»ææè½\u003c/attention\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/ultimaterevolution_small.png"},{"id":310,"name":"å°ä¸å­¦é¢","desc":"è·å¾å¬å¤å¸æè½\u003cspellName\u003eæ¬ºè¯é­æ¯\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003e\u003cspellName\u003eæ¬ºè¯é­æ¯\u003c/spellName\u003eï¼ä½ ä¼ éå¹¶åä¸º\u003ckeywordStealth\u003eéå½¢\u003c/keywordStealth\u003eãä½ å¨\u003ckeywordStealth\u003eéå½¢\u003c/keywordStealth\u003eç¶æä¸çä¸ä¸æ¬¡æ»å»é æé¢å¤\u003cphysicalDamage\u003eç©çä¼¤å®³\u003c/physicalDamage\u003eã\u003cbr\u003e\u003cbr\u003eå¨ä½ éµäº¡æ¶ï¼çæä¸ä¸ªçç¸çå­æ¥å¯¹éè¿çæäººä»¬é æå¤§é\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eå\u003cstatus\u003eææ§\u003c/status\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/clowncollege_small.png"},{"id":251,"name":"ç¼çéæ","desc":"ä½ æåç@MeleeReduction*100@%ä¼¤å®³ä¼è½¬èå¨@BleedDuration@ç§éæç»­åç(è¿ç¨è±éä¸º@RangedReduction*100@%)ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/numbtopain_small.png"},{"id":362,"name":"ä¸ãçäººãç»ç","desc":"ä¸ºä½ çæéæç¥¨ï¼éæ©ä¸ãæ¶é­çäººãç»çã\u003cbr\u003e\u003cbr\u003eä¸ãæ¶é­çäººãç»çï¼ä¼å¨ä½ å»è´¥ä¸ä¸ª\u003ckeywordMajor\u003eãæ¶é­ãæé\u003c/keywordMajor\u003eæ¶ä¸ºä½ æä¾\u003cgold\u003e+%i:goldCoins%@BonusGold@é¢å¤éå¸\u003c/gold\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/yonehunter_small.png"},{"id":322,"name":"å¼ºåä¹è½é","desc":"ä½¿ä½ çå¼ºåç¬¦æåè£\u0085å¤çä¼¤å®³æå@DamageAmp@ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/augmented_power_small.png"},{"id":53,"name":"ç§å­¦çäºº","desc":"æ¯ååï¼ä½ è¦ä¹åå¤§(\u003cscaleAF\u003eéåºä¹å\u003c/scaleAF\u003eå\u003cscaleHealth\u003eçå½å¼\u003c/scaleHealth\u003e)è¦ä¹åå°(\u003cscaleAbilityHaste\u003eæè½æ¥é\u003c/scaleAbilityHaste\u003eå\u003cspeed\u003eç§»å¨éåº¦\u003c/speed\u003e)ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/madscientist_small.png"},{"id":57,"name":"å±±èé¾é­","desc":"ä½ è·å¾å±±èé¾é­ï¼å¨è±ç¦»ææä¹åè·å¾ä¸ä¸ªæç»­ä¸å°æ®µæ¶é´ç\u003cshield\u003eæ¤ç¾\u003c/shield\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/mountainsoul_small.png"},{"id":88,"name":"ç»æå·æ°","desc":"æ¯ååä¸æ¬¡ï¼å¨ä½ æ½æ¾\u003cattention\u003eç»ææè½\u003c/attention\u003eåå°å\u0085¶å·æ°ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/ultimaterevolution_small.png"},{"id":236,"name":"è¯¡æ¯æ¶é­","desc":"å½ä½ ç¦»å¼æ½è¡ç¶ææ¶ä¼å¼åçç¸ï¼é æ\u003cmagicDamage\u003e@TotalDamage@é­æ³ä¼¤å®³\u003c/magicDamage\u003eï¼ä½ çå¤å¶ä½åé·é±å°å¨éµäº¡æ¶é æç¸åææã","rarity":1,"icon":"assets/ux/cherry/augments/icons/tricksterdemon_small.png"},{"id":171,"name":"å»è´¨","desc":"åä¸å»æåè·å¾\u003cscaleAF\u003e%i:miniAdaptiveForce% @AdaptiveForce@éåºä¹å\u003c/scaleAF\u003eï¼æ¯ååæ¯ä¸ªè±é1æ¬¡ã\u003cbr\u003e\u003cbr\u003e\u003crules\u003eå¨@RoundCounterForBonus@ååä¹åè·å¾è¿ä¸ªå¼ºåç¬¦æï¼ä¼è·å¾\u003cscaleAF\u003e%i:miniAdaptiveForce% @BonusForLatePick@éåºä¹å\u003c/scaleAF\u003eã\u003c/rules\u003e","rarity":0,"icon":"assets/ux/cherry/augments/icons/dematerialize_small.png"},{"id":39,"name":"å°é å¹½çµ","desc":"æ¯@Cooldown@ç§ï¼\u003ckeywordMajor\u003eèªå¨æ½æ¾\u003c/keywordMajor\u003e@RootDuration@ç§\u003cstatus\u003eç¦é¢\u003c/status\u003eç»éè¿çæäººä»¬ã\u003cbr\u003e","rarity":0,"icon":"assets/ux/cherry/augments/icons/frostwraith_small.png"},{"id":79,"name":"æäºäº¤åä¹","desc":"è·å¾\u003cspellName\u003eè´å½èå¥\u003c/spellName\u003eå\u003cspellName\u003eå¾æè\u0085\u003c/spellName\u003eåºç³ç¬¦æã","rarity":2,"icon":"assets/ux/cherry/augments/icons/symphonyofwar_small.png"},{"id":86,"name":"ç²¾åå¥æ","desc":"å¨ä½ ä»è¿å¤å¯¹ä¸åæäººé æä¼¤å®³æ¶ï¼å¯¹å\u0085¶åå°ä¸é\u003cabilityName\u003eç²¾åå¼¹å¹\u003c/abilityName\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/trueshotprodigy_small.png"},{"id":30,"name":"å°¤éå¡","desc":"è·å¾ç¸å½äº\u003cscaleAP\u003e@APToHasteConversion*100@%æ³æ¯å¼ºåº¦\u003c/scaleAP\u003eç\u003cscaleAbilityHaste\u003eæè½æ¥é\u003c/scaleAbilityHaste\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/eureka_small.png"},{"id":60,"name":"æµ·æ´é¾é­","desc":"è·å¾ãæµ·æ´é¾é­ãï¼å¨å¯¹ææ¹è±éé æä¼¤å®³åæä¾é«é¢ç\u003chealing\u003eçå½\u003c/healing\u003eå\u003cscaleMana\u003eæ³å\u003c/scaleMana\u003eåå¤ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/oceansoul_small.png"},{"id":321,"name":"ä¿é","desc":"ä½¿ç¨ä¸æ¬¡å²åºãéªçæä¼ éæ¶å¯ä¸ºä½ èªå·±åä½ éç»çä»»ä½åæ¹è±éæä¾ä¸ä¸ª\u003cshield\u003eæ¤ç¾\u003c/shield\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/bodyguard_small.png"},{"id":15,"name":"æ­»äº¡ä¹ç¯","desc":"ä½ é æç\u003chealing\u003eæ²»çææ\u003c/healing\u003eå\u003chealing\u003eçå½åå¤ææ\u003c/healing\u003eä¼å¯¹ç¸è·æè¿çé£ä¸ªææ¹è±éé æä¸é¨åæ²»çæ°é¢ç\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/circleofdeath_small.png"},{"id":156,"name":"ä»»å¡ï¼æ²æ ¼åç¹çå·«å¸å¸½","desc":"ç«å»ï¼è·å¾\u003cattention\u003eæ ç¨å¤§æ£\u003c/attention\u003eã\u003cbr\u003e\u003cbr\u003eéæ±ï¼ææ\u003cattention\u003eç­ä¸è\u0085çæ­»äº¡ä¹å¸½\u003c/attention\u003eå\u003cattention\u003eä¸­å¨\u0085æ²æ¼\u003c/attention\u003eã\u003cbr\u003e\u003cbr\u003eå¥å±:è·å¾\u003cattention\u003eæ²æ ¼åç¹çå·«å¸å¸½\u003c/attention\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/quest_woogletswitchcap_small.png"},{"id":27,"name":"å¤§å°èé","desc":"ä½ çå²åºãéªçæä¼ éç±»æè½ä¼çä¸ä¸æ¡å¨1ç§åçç¸çè½¨è¿¹ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/earthwake_small.png"},{"id":103,"name":"é¢å\u0085åé»æ²¹","desc":"ä½ ç@spell1KeyBind@è·å¾@QAbilityHaste@æè½æ¥éã","rarity":1,"icon":"assets/ux/cherry/augments/icons/breadandbutter_small.png"},{"id":82,"name":"æ®æ´ä¹å","desc":"è·å¾\u003cscaleAD\u003e@AD@æ»å»å\u003c/scaleAD\u003eã@AbilityHaste@æè½æ¥éå\u003cscaleLethality\u003e@Lethality@ç©¿ç²\u003c/scaleLethality\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/thebrutalizer_small.png"},{"id":76,"name":"å¤©é³ç","desc":"å¨ä¸ºä½ çååæä¾å¢çææã\u003chealing\u003eæ²»çææ\u003c/healing\u003eæ\u003cshield\u003eæ¤ç¾ææ\u003c/shield\u003eæ¶ï¼ä¼å¯¹å\u0085¶éè¿çæäººä»¬é æä¼¤å®³å\u003cstatus\u003eåé\u003c/status\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/sonicboom_small.png"},{"id":354,"name":"çè§æ®å­ç©","desc":"ä½¿éè¿è±éç\u003cattackSpeed\u003eæ»å»éåº¦\u003c/attackSpeed\u003eéä½ã","rarity":4,"icon":"assets/ux/cherry/augments/icons/remnantofthewatchers_small.png"},{"id":107,"name":"æ¥äºè¿ä¸","desc":"æ¯@ProcCadence@æ¬¡æ»å»ï¼ä½ ç{{ Item_Keyword_OnHit }}ææä¼è§¦åç¬¬äºæ¬¡ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/twicethrice_small.png"},{"id":239,"name":"å\u0085±ççªå","desc":"æ¯ååï¼è¿ä¸ªä¼\u003ckeyword\u003eè½¬å\u003c/keyword\u003eä¸ºä½ ååçå¼ºåç¬¦æä¹ä¸ã \u003cbr\u003e\u003cbr\u003e\u003crules\u003eä»\u0085ä¼çªåä¸ºä½ è½å¤å·æ°å°çå¼ºåç¬¦æã\u003c/rules\u003e","rarity":1,"icon":"assets/ux/cherry/augments/icons/symbioticmutation_small.png"},{"id":13,"name":"æçèº¯ä½","desc":"è·å¾\u003cscaleHealth\u003e@Health@çå½å¼\u003c/scaleHealth\u003eï¼ä½ä½ é æçä¼¤å®³éä½@DamageReduction*100@%ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/celestialbody_small.png"},{"id":324,"name":"åä¸­æå","desc":"å°æªæ¥çå¼ºåç¬¦æä¾åºæå@tierValueIncrease@é¶ãå¦æå¼ºåç¬¦æå·²ç»æ¯æ£±å½©é¶ï¼åè·å¾é¢å¤ç@GoldAmount@éå¸ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/bravestofthebrave_small.png"},{"id":150,"name":"é¢å\u0085åæé\u0085±","desc":"ä½ ç@spell2KeyBind@è·å¾@WAbilityHaste@æè½æ¥éã","rarity":1,"icon":"assets/ux/cherry/augments/icons/breadandjam_small.png"},{"id":98,"name":"æ¥æ¥å°å­","desc":"è·å¾\u003cspeed\u003eç§»å¨éåº¦\u003c/speed\u003eï¼ç¸å½äºä½ ç@AbilityHasteToMSConversion*100@%æè½æ¥éã","rarity":1,"icon":"assets/ux/cherry/augments/icons/withhaste_small.png"},{"id":349,"name":"å»è´¨å¨","desc":"ä½ çä¼¤å®³ä¼å¤å³ä½äº@ExecuteThreshold*100@%çå½å¼çè±éã","rarity":4,"icon":"assets/ux/cherry/augments/icons/dematerializer_small.png"},{"id":34,"name":"å è½å£ç¾","desc":"å¸¦çä¸ä¸ªæç»­@ShieldDuration@ç§ç\u003cabilityName\u003eé»æä¹ç¾\u003c/abilityName\u003eå¼å§ææã\u003cbr\u003e\u003cbr\u003e\u003crules\u003e\u003cattention\u003eé»æä¹ç¾\u003c/attention\u003eä¼\u003cshield\u003eæ ¼æ¡é­æ³ä¼¤å®³\u003c/shield\u003eå\u003cstatus\u003eå®èº«\u003c/status\u003eææã\u003c/rules\u003e","rarity":0,"icon":"assets/ux/cherry/augments/icons/fallenaegis_small.png"},{"id":198,"name":"å£ç«","desc":"ä½ ç\u003chealing\u003eæ²»ç\u003c/healing\u003eæ\u003cshield\u003eæ¤ç¾\u003c/shield\u003eä¼å¯¹ä¸ä¸ªéè¿çæäººæ½å ä¸å±æ éå å ç\u003ckeywordMajor\u003eç¼ç§\u003c/keywordMajor\u003eï¼å¨è¥å¹²ç§å\u0085æç»­é æ\u003cmagicDamage\u003eç¾åæ¯æå¤§çå½å¼çé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/holyfire_small.png"},{"id":311,"name":"æº¢æµ","desc":"ä½ ç\u003cscaleMana\u003eæ³å\u003c/scaleMana\u003eæ¶èç¿»åã\u003cbr\u003e\u003cbr\u003eä½ çæè½ç\u003chealing\u003eæ²»çææ\u003c/healing\u003eã\u003cshield\u003eæ¤ç¾ææ\u003c/shield\u003eåä¼¤å®³è·å¾æåï¼æåå¹\u0085åº¦åºäºä½ ç\u003cscaleMana\u003eæå¤§æ³åå¼\u003c/scaleMana\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/overflow_small.png"},{"id":35,"name":"æåçç§","desc":"è·å¾å¬å¤å¸æè½\u003cspellName\u003eæåç¼ç§\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003e\u003crules\u003e\u003cspellName\u003eæåç¼ç§\u003c/spellName\u003eä¼å¯¹ææéè¿çæäººä»¬æ½æ¾\u003cspellName\u003eå¼ç\u003c/spellName\u003eå\u003cspellName\u003eèå¼±\u003c/spellName\u003eã\u003c/rules\u003e","rarity":2,"icon":"assets/ux/cherry/augments/icons/feeltheburn_small.png"},{"id":42,"name":"æ¶è¶£å³","desc":"\u003cstatus\u003eå®èº«\u003c/status\u003eæ\u003cstatus\u003eç¼å°\u003c/status\u003eææ¹è±éæ¶\u003chealing\u003eå¯¹ä½ è¿è¡æ²»ç\u003c/healing\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/guiltypleasure_small.png"},{"id":9,"name":"é¸ç¬¦å\u0085å¼","desc":"ä½ è·å¾\u003cfont color = \u0027#f30c1a\u0027\u003eä½ç¬ä¹å \u003c/font\u003eå\u003cfont color = \u0027#1542ea\u0027\u003eæ´æä¹å \u003c/font\u003eã\u003cbr\u003e\u003cbr\u003eä¸ºä½ èªå·±æä¾æè½æ¥éåæ½æ³èµæºåå¤å¹¶ä½¿ä½ çæ»å»å¯¹ææ¹è±éé æ\u003ckeywordMajor\u003eç¼ç§\u003c/keywordMajor\u003eå\u003cstatus\u003eåé\u003c/status\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/buffbuddies_small.png"},{"id":125,"name":"å¯æ¬BOSS","desc":"ä½ æ¯ä¸ªååå¼å§æ¶è¢«å°å°ãå¨è¢«å°å°çç¶æä¸ï¼ä½ æ¥æå·¨é¢ä¼¤å®³åå\u0085å¹¶æç»­ç§¯æä½åååéã\u003cbr\u003e\u003cbr\u003eå½ä½ è§£é¤å°å°æ¶ï¼\u003cstatus\u003eå»é\u003c/status\u003eæäººä»¬å¹¶è·å¾\u003cshield\u003eæ¤ç¾\u003c/shield\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/raidboss_small.png"},{"id":63,"name":"çå¾è±ªæ°","desc":"å¨ä½¿ç¨ä¸æ¬¡å²åºãéªçæä¼ éä¹åï¼ä½ è·å¾\u003cscaleArmor\u003eæ¤ç²\u003c/scaleArmor\u003eå\u003cscaleMR\u003eé­æ³ææ§\u003c/scaleMR\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/outlawsgrit_small.png"},{"id":26,"name":"å¯å¿«ä¸ç ´","desc":"ä½ æ¯æ¯ç®æ å¤\u003cspeed\u003e10ç§»å¨éåº¦\u003c/speed\u003eï¼åå¯¹å\u0085¶å¤é æ@BonusDamagePerMSDifference*1000@%é¢å¤ä¼¤å®³ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/dontblink_small.png"},{"id":372,"name":"å¼ºæ±æå","desc":"ç®ç¥­\u003cscaleHealth\u003eä½ ç@HealthReductionPercent@%æå¤§çå½å¼\u003c/scaleHealth\u003eç»å¡å§ã\u003cbr\u003e\u003cbr\u003eä½ çæ»ç®ç¥­éå°æåè³\u003cscaleHealth\u003e-@MaxHealthReduction@%æå¤§çå½å¼\u003c/scaleHealth\u003eã\u003cbr\u003e\u003cbr\u003eè·å¾\u003ckeywordMajor\u003e@AnvilsGranted@ä¸ªæ£±å½©é¶å±æ§é»é å¨\u003c/keywordMajor\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/power_small.png"},{"id":73,"name":"æå½±ç¾å¥","desc":"å¨ä½¿ç¨ä¸ä¸ªå²åºãè·³è·ãéªçæä¼ éç±»æè½æç¦»å¼\u003cstealth\u003eæ½è¡\u003c/stealth\u003eç¶æä¹åï¼è·å¾æç»­@spell.Augment_ShadowRunner:BuffDuration@ç§ç\u003cspeed\u003e@spell.Augment_ShadowRunner:MSAmount@ç§»å¨éåº¦\u003c/speed\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/shadowrunner_small.png"},{"id":316,"name":"çæ§æ¯æ¶²","desc":"å¯¹ä¸åææ¹è±éé æä¼¤å®³æ¶ï¼ä¼ä½¿å\u0085¶è·å¾çä»»ä½\u003cshield\u003eæ¤ç¾\u003c/shield\u003eéä½ï¼å¹¶æ½å \u003cstatus\u003eéä¼¤\u003c/status\u003eï¼ä»èéä½å\u0085¶åå°çä»»ä½\u003chealing\u003eæ²»çææ\u003c/healing\u003eã ","rarity":0,"icon":"assets/ux/cherry/augments/icons/grevious_venmon_small.png"},{"id":45,"name":"ç¼ç±å¯¼ç®¡","desc":"ä½ çæè½ä¼æ½å ä¸å±å¯æ éå å ç\u003ckeywordMajor\u003eç¼ç§\u003c/keywordMajor\u003eï¼æç»­é æ\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã\u003cbr\u003e\u003cbr\u003eä½ ç\u003ckeywordMajor\u003eç¼ç§\u003c/keywordMajor\u003eææä¼éä½ä½ ååºç¡æè½çå·å´æ¶é´ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/infernalconduit_small.png"},{"id":361,"name":"ä¸ãæ¶é­ãç»ç","desc":"ä¸ºä½ çæéæç¥¨ï¼éæ©ä¸ãæ¶é­ãç»çã\u003cbr\u003e\u003cbr\u003eä¸ãæ¶é­ãç»çï¼ä¼å¨ä¸ä¸ª\u003ckeywordMajor\u003eãçäººãæéè¢«æ·æ±°\u003c/keywordMajor\u003eæ¶æä¾ä¸ä¸ª\u003ckeywordMajor\u003e%i:AugmentLevel%å¼ºåç¬¦æç­çº§\u003c/keywordMajor\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/yonedemon_small.png"},{"id":205,"name":"ç©çè½¬é­æ³","desc":"å°\u003cscaleAD\u003eé¢å¤æ»å»å\u003c/scaleAD\u003eè½¬åä¸º\u003cscaleAP\u003eæ³æ¯å¼ºåº¦\u003c/scaleAP\u003eãè·å¾\u003cscaleAP\u003e@APAmp*100@%æ³æ¯å¼ºåº¦\u003c/scaleAP\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/adapt_small.png"},{"id":4,"name":"åå½åºæ¬å","desc":"è·å¾æåè¿çæè½ä¼¤å®³ã\u003chealing\u003eæ²»çææ\u003c/healing\u003eã\u003cshield\u003eæ¤ç¾\u003c/shield\u003eå\u003cscaleAbilityHaste\u003eæè½æ¥é\u003c/scaleAbilityHaste\u003eï¼ä½ä½ \u003ckeywordMajor\u003eä¸è½ä½¿ç¨ä½ çç»ææè½\u003c/keywordMajor\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/backtobasics_small.png"},{"id":224,"name":"æ£±å½©è","desc":"åä¸å»ææ¶è·å¾@KillStackCredit@å±ï¼æ¯ååæ¯ä¸ªè±éä»\u0085è§¦åä¸æ¬¡æ­¤ææã\u003cbr\u003e\u003cbr\u003eå¨@RequiredKillCount@å±ä¹åï¼è¿ä¼å­µåæä¸ä¸ª\u003cattention\u003eæ£±å½©è£\u0085å¤é»é å¨\u003c/attention\u003eã\u003cattention\u003e%i:Augment%æ£±å½©é¶å¼ºåç¬¦æ\u003c/attention\u003eãä»¥åä¸ä¸ª\u003cattention\u003e%i:StatAnvil%æ£±å½©é¶å±æ§é»é å¨\u003c/attention\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/quest_prismaticegg_small.png"},{"id":110,"name":"æ¾è¡£ç»³","desc":"æä¸æ¡çµé¾è¿æ¥çä½ çæéï¼ä¸æ­å°å¯¹å®è§¦ç¢°å°çæäººä»¬é æ\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/clothesline_small.png"},{"id":102,"name":"è¯·å¿è¿½å»","desc":"ä½ æ è§åä½çç¢°æä½ç§¯å¹¶å¨èº«åçä¸ä¸æ¡å§æ¯è¸ªè¿¹ï¼å¯¹å\u0085¶ä¸­çæäººé æ\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/dontchase_small.png"},{"id":368,"name":"æ¸´æè´¢å¯","desc":"ç®ç¥­\u003cscaleHealth\u003eä½ ç@HealthReductionPercent@%æå¤§çå½å¼\u003c/scaleHealth\u003eç»å¡å§ã\u003cbr\u003e\u003cbr\u003eä½ çæ»ç®ç¥­éå°æåè³\u003cscaleHealth\u003e-@MaxHealthReduction@%æå¤§çå½å¼\u003c/scaleHealth\u003eã\u003cbr\u003e\u003cbr\u003eè·å¾\u003cgold\u003e%i:goldCoins% @GoldToGrant@éå¸\u003c/gold\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/wealth_large.png"},{"id":77,"name":"çµé­è¹å¸","desc":"\u003ccrit\u003eæ´å»\u003c/crit\u003e\u003clifeSteal\u003eé æä¼¤å®³ç@HealPercentage*100@%ä¼ç­é¢æ²»çä½ èªèº«\u003c/lifeSteal\u003eã\u003cbr\u003e\u003cbr\u003eè·å¾\u003ccrit\u003e%i:scaleCrit% @CritChance*100@%æ´å»å ç\u003c/crit\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/soulsiphon_small.png"},{"id":234,"name":"è´¢è¿é»é å¨","desc":"è·å¾\u003cgold\u003e%i:goldCoins%@GoldBonus@éå¸\u003c/gold\u003eå¹¶éä½ææé»é å¨çä»·æ ¼ã\u003cbr\u003e\u003cbr\u003e\u003cattention\u003eæ£±å½©é»é å¨\u003c/attention\u003eï¼\u003cgold\u003e-%i:goldCoins%@PrismaticCostReduction@éå¸\u003c/gold\u003e\u003cbr\u003e\u003cattention\u003eä¼ è¯´é»é å¨\u003c/attention\u003eï¼\u003cgold\u003e-%i:goldCoins%@LegendaryCostReduction@éå¸\u003c/gold\u003e\u003cbr\u003e\u003cattention\u003eå±æ§é»é å¨\u003c/attention\u003eï¼\u003cgold\u003e-%i:goldCoins%@StatCostReduction@éå¸\u003c/gold\u003e\u003cbr\u003e\u003cbr\u003e\u003crules\u003eä»é»é å¨ä¸­è·å¾çè£\u0085å¤çå®ä»·éä½\u003cgold\u003e%i:goldCoins%500éå¸\u003c/gold\u003eã\u003c/rules\u003e","rarity":2,"icon":"assets/ux/cherry/augments/icons/thiefsgloves_small.png"},{"id":301,"name":"ç¥å£å¹²é¢","desc":"ææå¼å§åçç­æ¶é´å\u0085ï¼å¬å¤ä¸é¢æ¤ä½ææãå¨å®çéæ¶ï¼ä½ åéè¿çååä»¬è¿å\u0085¥æç»­è¥å¹²ç§ç\u003ckeywordMajor\u003eå\u0085ç«ä¼¤å®³\u003c/keywordMajor\u003eç¶æã\u003cbr\u003e\u003cbr\u003eéåæ¯@BaseCD@ç§\u003ckeywordMajor\u003eèªå¨æ½æ¾\u003c/keywordMajor\u003eè¿ä¸ªææã","rarity":1,"icon":"assets/ux/cherry/augments/icons/slowactingpainkillers_small.png"},{"id":84,"name":"ç©¿éå¼çº¿","desc":"è·å¾@PercentPen*100@%\u003carmorPen\u003e%i:scaleAPen%æ¤ç²ç©¿é\u003c/armorPen\u003eå\u003cmagicPen\u003e%i:scaleMPen%æ³æ¯ç©¿é\u003c/magicPen\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/threadtheneedle_small.png"},{"id":151,"name":"é¢å\u0085åå¥¶é\u0085ª","desc":"ä½ ç@spell3KeyBind@è·å¾@EAbilityHaste@æè½æ¥éã","rarity":1,"icon":"assets/ux/cherry/augments/icons/breadandcheese_small.png"},{"id":149,"name":"ä¸å¨å¦å±±","desc":"è·å¾\u003cspellName\u003eä½é\u003c/spellName\u003eå\u003cspellName\u003eå°å·å¢å¹\u0085\u003c/spellName\u003eåºç³ç¬¦æã","rarity":1,"icon":"assets/ux/cherry/augments/icons/impassable_small.png"},{"id":317,"name":"æ½æµæççå­","desc":"å°ä½ çææå¼ºåç¬¦æåä¸º\u003ckeywordMajor\u003eéæºçæ£±å½©é¶%i:Augment%å¼ºåç¬¦æ\u003c/keywordMajor\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/pandoras_box_small.png"},{"id":33,"name":"å¼¹ç°§é£çª","desc":"\u003ckeywordMajor\u003eèªå¨æ½æ¾\u003c/keywordMajor\u003eæ¯12ç§æä¸ä¸ªéè¿çææ¹è±éåå°ä¸ä¸ªå¸éè¨çé£çªã","rarity":1,"icon":"assets/ux/cherry/augments/icons/extendoarm_small.png"},{"id":75,"name":"æ\u0085¢ç","desc":"æ¯ä¸ç§ï¼å¯¹éè¿çææ¹è±éä»¬æ½å ä¸å±å¯æ éå å ç\u003ckeywordMajor\u003eç¼ç§\u003c/keywordMajor\u003eï¼è¿ä¸ªææåçäºä½ ç\u003cscaleHealth\u003eæå¤§çå½å¼\u003c/scaleHealth\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/slowcooker_small.png"},{"id":24,"name":"æ©æ¥èµ´æ­»","desc":"è·å¾å¬å¤å¸æè½\u003cspellName\u003eæ©æ¥èµ´æ­»\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003e\u003crules\u003e\u003cspellName\u003eæ©æ¥èµ´æ­»\u003c/spellName\u003eä¼çæä¸ä¸ªæç»­4ç§çå°å¸¦ï¼æé´å\u0085å\u0085¶ä¸­çåä½é½ä¸ä¼éµäº¡ã\u003c/rules\u003e","rarity":1,"icon":"assets/ux/cherry/augments/icons/dieanotherday_small.png"},{"id":404,"name":"404 å¼ºåç¬¦ææªæ¾å°","desc":"ä½ æä¹æ¾å°è¿ä¸ªçï¼ï¼ï¼ï¼ï¼\u003cbr\u003e\u003cbr\u003eè·å¾@HatsToGrant@é¡¶å¸½å­ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/augment404_small.png"},{"id":373,"name":"å¼ºæ±é£é©","desc":"ç®ç¥­\u003cscaleHealth\u003eä½ ç@HealthReductionPercent@%æå¤§çå½å¼\u003c/scaleHealth\u003eç»å¡å§ã\u003cbr\u003e\u003cbr\u003eä½ çæ»ç®ç¥­éå°æåè³\u003cscaleHealth\u003e-@MaxHealthReduction@%æå¤§çå½å¼\u003c/scaleHealth\u003eã\u003cbr\u003e\u003cbr\u003eè·å¾ä¸ä¸ª\u003ckeywordMajor\u003e%i:Augment%æ£±å½©é¶å¼ºåç¬¦æ\u003c/keywordMajor\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/risk_small.png"},{"id":225,"name":"ååæµ","desc":"å¨ä½ æ»å»æ¶ï¼åå°ä¸ä¸ªå¼©ç®­ï¼å®é æ@AttackReduction*100@%ä¼¤å®³å¹¶ä»¥@OnHitMod*100@%æè½æ½å ä½ ç{{ Item_Keyword_OnHit }}ã\u003cbr\u003e\u003cbr\u003eè·å¾\u003cattackSpeed\u003e@AttackSpeed*100@% æ»æ»å»éåº¦\u003c/attackSpeed\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/dualwield_small.png"},{"id":405,"name":"å¼ºåç¬¦æ405","desc":"ä½ æ¯ç©¿æ´ä¸é¡¶å¸½å­ï¼å°±ä¼è·å¾@DamageAmpPerHat*100@%ä¼¤å®³ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/augment405_small.png"},{"id":78,"name":"çµé­è¿æ¥","desc":"{{Cherry_SpiritLink@TeamSize@_Summary}}","rarity":2,"icon":"assets/ux/cherry/augments/icons/spiritlink_small.png"},{"id":350,"name":"éé­è¯ç¶","desc":"æ¯@Cooldown@ç§è·å¾ä¸ä¸ª\u003cattention\u003eæ³æ¯æ¤ç¾\u003c/attention\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/crystallineflask_small.png"},{"id":217,"name":"æ­»äº¡è§¦æ¸","desc":"æ»å»ææ¹è±éæ¶æä¾æ°¸ä¹\u0085ç\u003ckeywordMajor\u003eè¯\u0085åè½é\u003c/keywordMajor\u003eå¹¶é æåºäºä½ \u003ckeywordMajor\u003eè¯\u0085åè½é\u003c/keywordMajor\u003eçé¢å¤\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/deathtouch_small.png"},{"id":192,"name":"ä»»å¡ï¼æ©æå¤©ä½¿","desc":"éæ±ï¼ç»åå\u003chealing\u003eæ²»ç\u003c/healing\u003eæé¢é²@RequirementAmount@ä¼¤å®³ã\u003cbr\u003e\u003cbr\u003eå¥å±ï¼è·å¾\u003cattackSpeed\u003e@AttackSpeed*100@%æ»å»éåº¦\u003c/attackSpeed\u003eï¼å¹¶ä¸ä½ çæ»å»é æç¸å½äº\u003chealing\u003e@HealPowerToDamageConversion*100@%æ²»ç/æ¤ç¾å¼ºåº¦\u003c/healing\u003eçé¢å¤\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/quest_angelofretribution_small.png"},{"id":17,"name":"èä¸ææ","desc":"æ¯ä¸ååï¼æ è®°ä¸ä¸ªå¯¹æ¹è±éã\u003cbr\u003e\u003cbr\u003eè¯¥è±éæ¿å@DamageAmp*100@%é¢å¤ä¼¤å®³å¹¶ä¸å¨è¢«å»ææ¶æä¾\u003cgold\u003e+%i:goldCoins%@Gold@éå¸\u003c/gold\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/contractkiller_small.png"},{"id":138,"name":"æ¸´è¡","desc":"è·å¾\u003clifeSteal\u003e@Omnivamp*100@%å\u0085¨è½å¸è¡\u003c/lifeSteal\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/goredrink_small.png"},{"id":330,"name":"å¥å¤º","desc":"å²åºæä¼ éä¼ä¸ºä½ æä¾\u003ckeywordMajor\u003eè¯\u0085åè½é\u003c/keywordMajor\u003eï¼åææ¯æä¸ä¸ªæäººå¨éè¿ãè·å¾åçäºä½ ç\u003ckeywordMajor\u003eè¯\u0085åè½é\u003c/keywordMajor\u003eç\u003cspeed\u003eç§»å¨éåº¦\u003c/speed\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/desecrator_small.png"},{"id":312,"name":"æä»¬é©¬ä¸å°±åæ¥","desc":"è·å¾å¬å¤å¸æè½\u003cspellName\u003eæ¶é´åæ­¢\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003e\u003crules\u003e\u003cspellName\u003eæ¶é´åæ­¢\u003c/spellName\u003eï¼ææéè¿çè±éé½è¢«ç½®å\u0085¥\u003cstatus\u003eåæ»\u003c/status\u003eç¶æãä½ ç¦»å¼\u003cstatus\u003eåæ»\u003c/status\u003eç¶æçæ¶é´å å¿«ï¼å¹¶ä¸å¨æ­¤æææé´ï¼åºäºä½ çå·²æå¤±çå½å¼ä¸ºä½ æä¾æ²»çã\u003c/rules\u003e","rarity":1,"icon":"assets/ux/cherry/augments/icons/wellberightback_small.png"},{"id":333,"name":"ä»»å¡ï¼çé¸ä¹ç¥çä»ªå¼","desc":"éæ±ï¼è´­ä¹°@AnvilsReqToComplete@ä¸ªè£\u0085å¤é»é å¨ã\u003cbr\u003e\u003cbr\u003eå¥å±ï¼ä½ çææè£\u0085å¤åçº§ä¸º\u003ckeywordMajor\u003eæ°ä½è£\u0085å¤\u003c/keywordMajor\u003eï¼æé«å\u0085¶@ItemPercentAmp*100@%å±æ§ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/quest_rite_of_the_forge_god_small.png"},{"id":37,"name":"æ¥æç¨å\u0085·","desc":"è·å¾\u003chealing\u003e@HealShieldAmp*100@%æ²»çåæ¤ç¾å¼ºåº¦\u003c/healing\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/firstaidkit_small.png"},{"id":61,"name":"ååOKé","desc":"æ¯@Cooldown@ç§æçä¸ä¸ªéè¿çæäºº\u003ckeywordMajor\u003eèªå¨æ½æ¾\u003c/keywordMajor\u003eææ·ä¸ä¸ªååéã","rarity":1,"icon":"assets/ux/cherry/augments/icons/okboomerang_small.png"},{"id":357,"name":"åç®¡é½ä¸","desc":"å½ä½ ç¨ä¸æ¬¡æ»å»é æä¼¤å®³æ¶ï¼ä½ çä¸ä¸ä¸ªæè½é æçä¼¤å®³æå@AbilityBoost*100@%ã\u003cbr\u003e\u003cbr\u003eå½ä½ ç¨ä¸ä¸ªæè½é æä¼¤å®³æ¶ï¼ä½ çä¸ä¸æ¬¡æ»å»é æçä¼¤å®³æå@AttackBoost*100@%ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/hybrid_small.png"},{"id":338,"name":"èå·¢æç»´","desc":"æ¯ååå¼å§æ¶æ@StartingBees@åªãå°èèããéè¿æ¶éè±æµæ¥è·å¾é¢å¤çãå°èèããä¼¤å®³ä¸ä¸ªææ¹è±éæ¶ï¼å°æ´¾åºä¸åªãå°èèãï¼å®å¨æµè¾¾åç@DebuffDuration@ç§éæç»­é æ\u003cmagicDamage\u003e@BeeDamage@é­æ³ä¼¤å®³\u003c/magicDamage\u003eï¼ç¶åä¼æè¿ã\u003cbr\u003e","rarity":2,"icon":"assets/ux/cherry/augments/icons/hive_mind_small.png"},{"id":319,"name":"ä»»å¡ï¼ä¸å£å®","desc":"éæ±ï¼ææãæ å°½ä¹åãããå°æãåãæµ·å\u0085æ¯ç§ææªåãã\u003cbr\u003e\u003cbr\u003eå¥å±ï¼è¸é¿å¨çæ»å»è¢«æ¿æ¢ä¸ºé ææ··åä¼¤å®³çæ¿å\u0085ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/threesacredtreasures_small.png"},{"id":49,"name":"ææ±ç","desc":"æ¯ååï¼ä½ çæéä¸­çæ¯ä¸ªäººé½è·å¾@JuiceCount@é¥®åã","rarity":0,"icon":"assets/ux/cherry/augments/icons/juicebox_small.png"},{"id":115,"name":"æä¸ç¨ççåé","desc":"è·å¾@RangeIncrease@æ»å»è·ç¦»ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/scopiestweapons_small.png"},{"id":232,"name":"å²è±å§æ¶é´","desc":"æ¯å ç§ï¼\u003ckeywordMajor\u003eèªå¨æ½æ¾\u003c/keywordMajor\u003eæ¥èªä½ èº«ä½çä¸å¢ç²æ¶²ï¼å¯¹éè¿çæäººä»¬é æ\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã \u003cbr\u003e\u003cbr\u003eå¦æä½ å½ä¸­äºä¸ä¸ªè±éï¼åä¼åæ³åºä¸ä¸ªæ¶²å¢ï¼èµ°å°æ¶²å¢ä¸ä¼\u003chealing\u003eæ²»ç\u003c/healing\u003eä½ ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/slimetime_small.png"},{"id":216,"name":"ææ§ä½¿è\u0085","desc":"è·å¾ä¸ä¸ªå\u0085ç¯ï¼ä»å\u0085¶ä¸­æ¯ä¸ªçææ¹è±éå¤æç»­æ¶å²æ°¸ä¹\u0085ç\u003ckeywordMajor\u003eè¯\u0085åè½é\u003c/keywordMajor\u003eãè·å¾\u003cscaleHealth\u003eæå¤§çå½å¼\u003c/scaleHealth\u003eï¼åºäºä½ ç\u003ckeywordMajor\u003eè¯\u0085åè½é\u003c/keywordMajor\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/plaguebearer_small.png"},{"id":204,"name":"å è§é¾","desc":"å¨ä½ è·å¾ä¸ä¸ªæè½çæ°¸ä¹\u0085\u003ckeywordMajor\u003eå±æ°\u003c/keywordMajor\u003eæ¶ï¼å¤è·å¾@StackModifier*100@%ï¼","rarity":0,"icon":"assets/ux/cherry/augments/icons/stackosaurusrex_small.png"},{"id":206,"name":"é­æ³è½¬ç©ç","desc":"å°\u003cscaleAP\u003eæ³æ¯å¼ºåº¦\u003c/scaleAP\u003eè½¬åä¸º\u003cscaleAD\u003eé¢å¤æ»å»å\u003c/scaleAD\u003eãè·å¾\u003cscaleAD\u003e@ADAmp*100@%æ»å»å\u003c/scaleAD\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/escapade_small.png"},{"id":194,"name":"ç²¾æªé­æ³","desc":"ä½ ç\u003cattention\u003eç»ææè½\u003c/attention\u003eçä¼¤å®³ä¼å¯¹æäººé ææç»­è¥å¹²ç§ç\u003cstatus\u003eåå½¢\u003c/status\u003eææã","rarity":2,"icon":"assets/ux/cherry/augments/icons/feymagic_small.png"},{"id":36,"name":"ç«ä¸æµæ²¹","desc":"ä½ çæ»å»ä¼æ½å ä¸ä¸ªå¯æ éå å ç\u003ckeywordMajor\u003eç¼ç§\u003c/keywordMajor\u003e{{ Item_Keyword_OnHit }}ï¼æç»­é æä¼¤å®³ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/firebrand_small.png"},{"id":219,"name":"æ«æ¥é¢è¨è\u0085","desc":" ç¨ä¸ä¸ªæè½å½ä¸­ä¸ä¸ªè±éï¼å¯ä¸ºä½ æä¾æ°¸ä¹\u0085ç\u003ckeywordMajor\u003eè¯\u0085åè½é\u003c/keywordMajor\u003eãè·å¾\u003cscaleAF\u003eéåºä¹å\u003c/scaleAF\u003eï¼åºäºä½ ç\u003ckeywordMajor\u003eè¯\u0085åè½é\u003c/keywordMajor\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/doomsayer_small.png"},{"id":116,"name":"éªç°åå","desc":"ä½ ç\u003cspellName\u003eéªç°\u003c/spellName\u003eæ@MaxAmmo@å±å\u0085\u0085è½ï¼å¹¶ä¸å·å´æ¶é´ä¸º@FlashCooldown@ç§ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/flashy_small.png"},{"id":177,"name":"å¥å¨","desc":"è·å¾@BonusLives@é¢å¤\u003cattention\u003eå¤æ´»æ¬¡æ°\u003c/attention\u003eï¼å¹¶ä¸å¨ä½ éµäº¡ä¹åå¼å§å¤æ´»ä½ èªå·±ã\u003cbr\u003e\u003cbr\u003eå¨ä½ \u003cattention\u003eå¤æ´»\u003c/attention\u003eæ¶ï¼\u003cstatus\u003eå»é\u003c/status\u003eä½ å¨å´çæäººä»¬ï¼å¹¶ä¸åå¾æ´å°å¹¶ä¸å\u0085·æéä½è¿ç\u003cscaleHealth\u003eæå¤§çå½å¼\u003c/scaleHealth\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/nesting_doll_small.png"},{"id":81,"name":"è¸¢è¸è","desc":"ä½ çæ»å»ä¼ä¸ºä½ æä¾\u003cspeed\u003e@MSPerHit@ç§»å¨éåº¦\u003c/speed\u003e {{ Item_Keyword_OnHit }}ã\u003cbr\u003e\u003cbr\u003eè·å¾ç­åäºä½ \u003cspeed\u003eç§»å¨éåº¦\u003c/speed\u003e@MSToASConversion*10000@%ç\u003cattackSpeed\u003eæ»å»éåº¦\u003c/attackSpeed\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/tapdancer_small.png"},{"id":220,"name":"è¿æ¨å»é¤","desc":"å¨ä½ æ»å»æ¶ï¼åå°@AdditionalBolts@ä¸ªç®­ç¢ï¼æ¯ä¸ªé æ\u003cphysicalDamage\u003eç©çä¼¤å®³\u003c/physicalDamage\u003eå¹¶æ½å ä½ ç{{ Item_Keyword_OnHit }}ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/fanthehammer_small.png"},{"id":364,"name":"æ¿æ¢å¼ºåç¬¦æ","desc":"å°ä½ çå\u0085¶ä¸­ä¸ä¸ª\u003ckeywordMajor\u003e%i:Augment%å¼ºåç¬¦æ\u003c/keywordMajor\u003e\u003ckeywordMajor\u003eæ¿æ¢\u003c/keywordMajor\u003eä¸º\u003ckeywordMajor\u003e@TierIncreaseToolTipOnly@%i:AugmentLevel%æ´é«ä½é¶\u003c/keywordMajor\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/replace_augment_small.png"},{"id":85,"name":"æç£¨ä¹å","desc":"\u003cstatus\u003eå®èº«\u003c/status\u003eæ\u003cstatus\u003eç¼å°\u003c/status\u003eææ¹è±éæ¶æä¾ä¸å±\u003ckeywordMajor\u003eç¼ç§\u003c/keywordMajor\u003eï¼è¿ä¸ªææä¼æç»­é æä¼¤å®³å¹¶å¯æ éå å ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/tormentor_small.png"},{"id":104,"name":"ä»ä»å¤§å¸","desc":"ä½ çå¬å¤ç©è·å¾@MinionAmp*100@%ä½åæåãçå½å¼åä¼¤å®³ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/minionmancer_small.png"},{"id":392,"name":"è¯éªè\u0085ä¹ç","desc":"å¯¹ä¸åææ¹è±éé æä¼¤å®³æ¶ï¼ä¼éä½å\u0085¶\u003cshield\u003eæ¤ç¾å¼\u003c/shield\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/swindlers_orb_item_small.png"},{"id":313,"name":"å¦å\u0085å¼æ","desc":"å¨åä¸å»ææ¶ï¼è·å¾ä½åæåå\u003cscaleHealth\u003eç¾åæ¯é¢å¤çå½å¼\u003c/scaleHealth\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/tank_engine_small.png"},{"id":341,"name":"è·å¾ä¸ä¸ªå¼ºåç¬¦ææ ä½","desc":"è§£éä½ ç\u003ckeywordMajor\u003eç¬¬@TooltipSlotToUnlock@ä¸ªå¼ºåç¬¦ææ ä½\u003c/keywordMajor\u003eã\u003cbr\u003e\u003cbr\u003eå¨@RoundsUntilFreeAugment@ååå\u0085ï¼è·å¾ä¸ä¸ª\u003ckeywordMajor\u003e%i:Augment%ç½é¶é¶å¼ºåç¬¦æ\u003c/keywordMajor\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/crafting_slot_small.png"},{"id":29,"name":"èå¹»æ­¦å¨","desc":"ä½ çæè½å¯æ½å {{ Item_Keyword_OnHit }}ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/etherealweapon_small.png"},{"id":62,"name":"å\u0085¨è½é¾é­","desc":"è·å¾@SoulsToAdd@ä¸ªéæº\u003cattention\u003eé¾é­\u003c/attention\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/omnisoul_small.png"},{"id":20,"name":"é»æä½¿è\u0085çåå³","desc":"å¨è·å°\u003cscaleHealth\u003e@HealthThreshold*100@%çå½å¼\u003c/scaleHealth\u003eä»¥ä¸æ¶ï¼\u003chealing\u003eå¨@HealDuration@ç§å\u0085æç»­æ²»ç@HealCalc@\u003c/healing\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/dawnbringersresolve_small.png"},{"id":356,"name":"é¶æ±¤å","desc":"ä½ æ¯æ1ä¸ª\u003ckeywordMajor\u003e%i:Augment%ç½é¶é¶å¼ºåç¬¦æ\u003c/keywordMajor\u003eï¼å°±ä¼è·å¾ä¼¤å®³æåã","rarity":0,"icon":"assets/ux/cherry/augments/icons/silver_spoon_small.png"},{"id":207,"name":"çº¹ä¸ä¸å¨","desc":"è·å¾\u003cspellName\u003eæ¸¸å»éåå¤\u003c/spellName\u003e\u003cbr\u003e\u003cbr\u003eåå°ä¸å¨ä¼ä½¿ä½ åä¸º\u003ckeywordStealth\u003eéå½¢\u003c/keywordStealth\u003eï¼æç»­å°ä½ ç§»å¨ä¸ºæ­¢ãç¦»å¼è¿ä¸ª\u003ckeywordStealth\u003eéå½¢\u003c/keywordStealth\u003eç¶ææ¶ï¼ä¼ä½¿ä½ çä¸ä¸æ¬¡æ»å»é æé¢å¤\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/holdverystill_small.png"},{"id":38,"name":"æå§æç»","desc":"è·å¾\u003cspellName\u003eå\u0085æ»\u003c/spellName\u003eå\u003cspellName\u003eé»ææ¶å²\u003c/spellName\u003eåºç³ç¬¦æã","rarity":1,"icon":"assets/ux/cherry/augments/icons/frombeginningtoend_small.png"},{"id":335,"name":"é¿é¾æ","desc":"æ¯åºææä»\u0085è§¦åä¸æ¬¡ï¼å½ä½ å³å°éµäº¡æ¶ï¼è½¬èåä¸ºä¸ä¸ªç²¾é­ï¼å°ä½ èªèº«è®¾ç½®ä¸º\u003cscaleHealth\u003e@HealthLock*100@%çå½å¼\u003c/scaleHealth\u003eï¼å¹¶ä¼ éå°ç«æåºå\u0085çä¸ä¸ªéæºå°ç¹ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/panic_room_small.png"},{"id":240,"name":"å¯ççªå","desc":"æ¯ååï¼è¿ä¸ªä¼\u003ckeyword\u003eçªå\u003c/keyword\u003eä¸ºä½ å¯¹æä»¬çå¼ºåç¬¦æä¹ä¸ã\u003cbr\u003e\u003cbr\u003e\u003crules\u003eä»\u0085ä¼çªåä¸ºä½ è½å¤å·æ°å°çå¼ºåç¬¦æã\u003c/rules\u003e","rarity":0,"icon":"assets/ux/cherry/augments/icons/parasiticmutation_small.png"},{"id":11,"name":"ä½ æ¸ä¸å°","desc":"æ½æ¾ä½ ç\u003cattention\u003eç»ææè½\u003c/attention\u003eä¼ä½¿ä½ è¿å\u0085¥ç­æ¶é´ç\u003ckeywordMajor\u003eå\u0085ç«ä¼¤å®³\u003c/keywordMajor\u003eç¶æã","rarity":2,"icon":"assets/ux/cherry/augments/icons/canttouchthis_small.png"},{"id":47,"name":"å\u0085³é®æ´å»","desc":"è·å¾\u003ccrit\u003e%i:scaleCrit%@CritChance*100@%æ´å»å ç\u003c/crit\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/itscritical_small.png"},{"id":200,"name":"è¡äº²å\u0085å¼","desc":"è·å¾å¾·è±åæ¯ç\u003cspellName\u003eåºè¡\u003c/spellName\u003eè¢«å¨ã\u003cbr\u003e\u003cbr\u003e\u003crules\u003eæ»å»åä¼¤å®³åæè½ä¼ä½¿ç®æ \u003ckeywordMajor\u003eåºè¡\u003c/keywordMajor\u003eï¼å¨@BleedDuration@ç§éæç»­é æå\u0085±\u003cphysicalDamage\u003e@BleedDamagePerStack@ç©çä¼¤å®³\u003c/physicalDamage\u003eï¼è³å¤å¯å å @MaxStacks@å±ã\u003cbr\u003e\u003cbr\u003eå¾·è±æå¨\u003ckeywordMajor\u003eåºè¡\u003c/keywordMajor\u003eè¾¾å°@MaxStacks@å±æ¶ä¼è·å¾\u003cscaleAD\u003e@NoxianMightBonusAD@æ»å»å\u003c/scaleAD\u003eã\u003c/rules\u003e\u003cbr\u003e\u003cbr\u003e","rarity":1,"icon":"assets/ux/cherry/augments/icons/bloodbrother_small.png"},{"id":112,"name":"ç»æä¸å¯é»æ¡","desc":"å¨ä½ ä½¿ç¨ä½ çç»ææè½åï¼ä½ è·å¾æç»­@UnstoppableDuration@ç§ç\u003cstatus\u003eæ§å¶å\u0085ç«\u003c/status\u003eã (@Cooldown@ç§å·å´æ¶é´)ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/ultimateunstoppable_small.png"},{"id":68,"name":"å¾ªç¯å¾å¤","desc":"è·å¾@AbilityHaste@æè½æ¥éã","rarity":1,"icon":"assets/ux/cherry/augments/icons/recursion_small.png"},{"id":228,"name":"å±æ§å å±æ§å å±æ§ï¼","desc":"è·å¾@AmountOfStatAnvils@ä¸ª%i:StatAnvil%ãå±æ§é»é å¨ãï¼","rarity":2,"icon":"assets/ux/cherry/augments/icons/statsonstatsonstats_small.png"},{"id":22,"name":"çµå·§","desc":"è·å¾%i:scaleAS% @AttackSpeed*100@%\u003cspeed\u003eæ»å»éåº¦\u003c/speed\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/deft_small.png"},{"id":41,"name":"æ­å©äºå·¨äºº","desc":"ä½ååå¤§ï¼è·å¾\u003cscaleHealth\u003e@HealthAmp*100@%çå½å¼\u003c/scaleHealth\u003eå\u003cscaleAF\u003e@AFAmp*100@%éåºä¹å\u003c/scaleAF\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/goliath_small.png"},{"id":367,"name":"æç»é£é©","desc":"\u003chealing\u003eåå¤@HealthRestorePercent@%ä½ å·²ç®ç¥­ç»å¡å§ççå½å¼\u003c/healing\u003eã\u003cbr\u003e\u003cbr\u003eç«å»è·å¾ä¸ä¸ª\u003ckeywordMajor\u003e%i:Augment%ç½é¶é¶å¼ºåç¬¦æ\u003c/keywordMajor\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/risk_small.png"},{"id":305,"name":"ç»è\u0085¿æ¥","desc":"è·å¾\u003cspeed\u003e@MovementSpeed@ç§»å¨éåº¦\u003c/speed\u003eå\u003cspeed\u003e@SlowResist*100@%åéææ§\u003c/speed\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/legday_small.png"},{"id":221,"name":"å¼è·¯è\u0085","desc":"å²åºæéªçä¼å¯¹ä¸åéè¿çææ¹è±éæ¶æ½å ä¸å±\u003ckeywordMajor\u003eç¼ç§\u003c/keywordMajor\u003eï¼è¿ä¸ªææä¼æç»­é æä¼¤å®³å¹¶å¯æ éå å ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/trailblazer_small.png"},{"id":1,"name":"å éå·«æ¯","desc":"ä½¿ç¨æè½æ¶ä¼ä¸ºä½ æä¾å¯å å ç\u003cscaleAbilityHaste\u003eæè½æ¥é\u003c/scaleAbilityHaste\u003eã.\u003cbr\u003e\u003cbr\u003e\u003crules\u003eè¿ä¸ªææä¼å¨æ¯ååéç½®ã\u003c/rules\u003e","rarity":2,"icon":"assets/ux/cherry/augments/icons/acceleratingsorcery_small.png"},{"id":343,"name":"æ­£ä¹ä¹æ","desc":"\u003chealing\u003eæ²»ç\u003c/healing\u003eæ\u003cshield\u003eæ¤ç¾\u003c/shield\u003eä¼æé«ä½ @SpellDamagePerStack*100@%æè½ä¼¤å®³ï¼ååå\u0085å¯æ éå å å±æ°ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/righteous_fury_small.png"},{"id":208,"name":"è½¨éé­å°","desc":"å°å¬å¤å¸æè½ãéªäººãæ¿æ¢ä¸º\u003cspellName\u003eè½¨éé­å°\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003e\u003crules\u003eå¨ä¸éµå»¶è¿åï¼å¬å¤ä¸éè½¨éé­å°å\u0085æè½ä¸ï¼å¨@GroundDuration@ç§éæç»­é æ\u003ctrueDamage\u003e@DamagetoChampions*100@%æå¤§çå½å¼ççå®ä¼¤å®³\u003c/trueDamage\u003eå¤å \u003cmagicDamage\u003e@TotalDamageOverTimeTooltip@é­æ³ä¼¤å®³\u003c/magicDamage\u003eã\u003c/rules\u003e","rarity":2,"icon":"assets/ux/cherry/augments/icons/orbitallaser_small.png"},{"id":344,"name":"è½éå\u0085\u0085æ²","desc":"\u003ckeyword\u003eçè½\u003c/keyword\u003eçè·åå å¿«@EnergizeAmpMovementCharge*100@%ãè§¦å\u003ckeyword\u003eçè½\u003c/keyword\u003eæ¶ä¼åå°ä¸ä¸ª\u003ckeywordMajor\u003eé­æ³é£å¼¹\u003c/keywordMajor\u003eï¼åºäºé£è¡è·ç¦»è³å¤é æ\u003ctrueDamage\u003e@MaxHealthDamagePerMissile*100@%æå¤§çå½å¼ççå®ä¼¤å®³\u003c/trueDamage\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/energetic_small.png"},{"id":365,"name":"æç»è´¢å¯","desc":"\u003chealing\u003eåå¤@HealthRestorePercent@%ä½ å·²ç®ç¥­ç»å¡å§ççå½å¼\u003c/healing\u003eã\u003cbr\u003e\u003cbr\u003eè·å¾\u003cgold\u003e%i:goldCoins% @GoldToGrant@éå¸\u003c/gold\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/wealth_small.png"},{"id":58,"name":"ç§æ¯å²æ³","desc":"{{ Item_Keyword_OnHit }}ä½¿ä½ çåä¸ªæè½çå·å´æ¶é´ç¼©å@CooldownRefund@ç§%i:scaleCooldown%ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/mysticpunch_small.png"},{"id":105,"name":"å®¶å­å«å£«","desc":"è·å¾\u003cspeed\u003e@spell.Augment_Homeguard:MovementSpeed*100@%ç§»å¨éåº¦\u003c/speed\u003eï¼å¨åå°ä¼¤å®³åå¤±æ@spell.Augment_Homeguard:DisableCooldown@ç§ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/homeguard_small.png"},{"id":3,"name":"èæ å¼ºåç¬¦æ","desc":"èæ ","rarity":0,"icon":"assets/ux/cherry/augments/icons/canttouchthis_small.png"},{"id":241,"name":"å¸½å­ææ³","desc":"å³å»è·å¾@HatsToGrant@é¡¶\u003ckeywordMajor\u003eå¸½å­\u003c/keywordMajor\u003eï¼å¹¶ä¸\u003ckeywordMajor\u003eå¸½å­é¥®å\u003c/keywordMajor\u003eçä»·æ ¼éä½@HatTrickPriceReduction@ã\u003cbr\u003e\u003cbr\u003eå¨åå°å°ä½¿ä½ ççå½å¼è·å\u0085¥@LowHealthThreshold*100@%ä»¥ä¸çä¼¤å®³æ¶ï¼è·å¾\u003cspeed\u003eç§»å¨éåº¦\u003c/speed\u003eå\u003cshield\u003eæ¤ç¾å¼\u003c/shield\u003eï¼ä½å¤±å»ä¸é¡¶\u003ckeywordMajor\u003eå¸½å­\u003c/keywordMajor\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/hattrick_small.png"},{"id":181,"name":"ééçº§æå»æ","desc":"ä½ çæ»å»é æç¸å½äºä½ @HealthPercent*100@%\u003cscaleHealth\u003eæå¤§çå½å¼\u003c/scaleHealth\u003eçé¢å¤\u003cphysicalDamage\u003eç©çä¼¤å®³\u003c/physicalDamage\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/heavyhitter_small.png"},{"id":67,"name":"å¤å¼ä½³é\u0085¿","desc":"ä½¿ç¨ä¸ä¸ªæè½æ¶ä¼åå¤\u003chealing\u003e@HealAmount@çå½å¼\u003c/healing\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/rabblerousing_small.png"},{"id":195,"name":"å·¨äººææ","desc":"ä½ååå°ï¼è·å¾\u003cspeed\u003eç§»å¨éåº¦\u003c/speed\u003eï¼å¹¶åºäºææ¹è±éä½åå¤§äºä½ çç¨åº¦é æé¢å¤ä¼¤å®³ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/giantslayer_small.png"},{"id":238,"name":"è´¨åï¼æ£±å½©é¶","desc":"è·å¾1ä¸ªéæº\u003ckeywordMajor\u003e%i:Augment%æ£±å½©é¶å¼ºåç¬¦æ\u003c/keywordMajor\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/transmuteprismatic_small.png"},{"id":370,"name":"æ¸´æé£é©","desc":"ç®ç¥­\u003cscaleHealth\u003eä½ ç@HealthReductionPercent@%æå¤§çå½å¼\u003c/scaleHealth\u003eç»å¡å§ã\u003cbr\u003e\u003cbr\u003eä½ çæ»ç®ç¥­éå°æåè³\u003cscaleHealth\u003e-@MaxHealthReduction@%æå¤§çå½å¼\u003c/scaleHealth\u003eã\u003cbr\u003e\u003cbr\u003eè·å¾ä¸ä¸ª\u003ckeywordMajor\u003e%i:Augment%é»éé¶å¼ºåç¬¦æ\u003c/keywordMajor\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/risk_small.png"},{"id":371,"name":"å¼ºæ±è´¢å¯","desc":"ç®ç¥­\u003cscaleHealth\u003eä½ ç@HealthReductionPercent@%æå¤§çå½å¼\u003c/scaleHealth\u003eç»å¡å§ã\u003cbr\u003e\u003cbr\u003eä½ çæ»ç®ç¥­éå°æåè³\u003cscaleHealth\u003e-@MaxHealthReduction@%æå¤§çå½å¼\u003c/scaleHealth\u003eã\u003cbr\u003e\u003cbr\u003eè·å¾\u003cgold\u003e%i:goldCoins% @GoldToGrant@éå¸\u003c/gold\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/wealth_small.png"},{"id":118,"name":"ä¼å¿æ²»ç","desc":"ä½ ç\u003chealing\u003eæ²»ç\u003c/healing\u003eå\u003cshield\u003eæ¤ç¾\u003c/shield\u003eå¯ä»¥\u003ccrit\u003eæ´å»\u003c/crit\u003eï¼é æé¢å¤ç@CriticalHealCalc@ã\u003cbr\u003e\u003cbr\u003eè·å¾\u003ccrit\u003e%i:scaleCrit% @CritChance*100@%æ´å»å ç\u003c/crit\u003eã ","rarity":1,"icon":"assets/ux/cherry/augments/icons/criticalhealing_small.png"},{"id":237,"name":"è´¨åï¼é»éé¶","desc":"è·å¾1ä¸ªéæº\u003ckeywordMajor\u003e%i:Augment%é»éé¶å¼ºåç¬¦æ\u003c/keywordMajor\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/transmutegold_small.png"},{"id":2,"name":"å°ç«¯åæå®¶","desc":"è·å¾\u003cscaleBonus\u003e@ItemHaste@è£\u0085å¤æ¥é\u003c/scaleBonus\u003e(ç¸å½äº@TooltipCDR@%è£\u0085å¤å·å´ç¼©å)ã\u003cbr\u003e\u003cbr\u003e\u003crules\u003eè£\u0085å¤æ¥éå¯ç¼©åææè£\u0085å¤æè½çå·å´æ¶é´%i:cooldown%ã\u003c/rules\u003e","rarity":1,"icon":"assets/ux/cherry/augments/icons/apexinventor_small.png"},{"id":172,"name":"éè±æ°´æ","desc":"å½ä½ è·ä¸\u003cscaleHealth\u003e@HealthThreshold*100@%çå½å¼\u003c/scaleHealth\u003eæ¶ï¼ææ¶\u003ckeywordStealth\u003eéå½¢\u003c/keywordStealth\u003eå¹¶çæä½ èªå·±ç4ä¸ªå¤å¶ä½ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/mirrorimage_small.png"},{"id":345,"name":"é­æ³å°å¥³","desc":"æ¯ååä¼æä¸é¢ææå è½ï¼æ¾åå®å³å¯ä½¿ä½ åèº«ä¸ºä¸ä¸ªå¼ºå¤§çé­æ³å°å¥³ã\u003cbr\u003e\u003cbr\u003eä½ä¸ºä¸ä¸ªé­æ³å°å¥³ï¼ææä¼å¦é¨è¬è½å¨ä½ åä½ æäººä»¬çå¨å´ï¼é æ\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/magic_girl_small.png"},{"id":218,"name":"äºµæ¸è\u0085","desc":"\u003cstatus\u003eå®èº«\u003c/status\u003eææ¹è±éæ¶ä¸ºä½ æä¾æ°¸ä¹\u0085ç\u003ckeywordMajor\u003eè¯\u0085åè½é\u003c/keywordMajor\u003eãè·å¾\u003cscaleArmor\u003eæ¤ç²\u003c/scaleArmor\u003eå\u003cscaleMR\u003eé­æ\u003c/scaleMR\u003eï¼åºäºä½ ç\u003ckeywordMajor\u003eè¯\u0085åè½é\u003c/keywordMajor\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/desecrator_small.png"},{"id":141,"name":"å\u0085¨å¿ä¸ºä½ ","desc":"ä½ ç\u003chealing\u003eæ²»ç\u003c/healing\u003eå\u003cshield\u003eæ¤ç¾\u003c/shield\u003eå¨ç¨å¨ä¸ä¸ªååèº«ä¸æ¶ä¼åå¼ºã","rarity":1,"icon":"assets/ux/cherry/augments/icons/allforyou_small.png"},{"id":50,"name":"åºç³æ³å¸","desc":"è·å¾\u003cspellName\u003eå¬å¤ï¼è¾é»\u003c/spellName\u003eå\u003cspellName\u003eå¥¥æ¯å½æ\u003c/spellName\u003eåºç³ç¬¦æã","rarity":1,"icon":"assets/ux/cherry/augments/icons/keystoneconjurer_small.png"},{"id":174,"name":"é­å°ç¼","desc":"ä½ æ­£å¨é¢å¯¹çæ¹åä¼åºç°ä¸éé­å°å\u0085æï¼å¯é ææç»­ç\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/lasereyes_small.png"},{"id":227,"name":"å±æ§å å±æ§ï¼","desc":"è·å¾@AmountOfStatAnvils@ä¸ª%i:StatAnvil%ãå±æ§é»é å¨ãï¼","rarity":1,"icon":"assets/ux/cherry/augments/icons/statsonstats_small.png"},{"id":19,"name":"å\u0085¨å­èº«æ³","desc":"ä½ çå²åºãè·³è·ãéªçæä¼ éç±»æè½è·å¾\u003cscaleAbilityHaste\u003e@Haste@æè½æ¥é\u003c/scaleAbilityHaste\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/dashing_small.png"},{"id":229,"name":"ç«çç©å","desc":"ç«å»å®åºä½ çææéä»»å¡è£\u0085å¤ï¼æ¢åå®ä»¬ç@SellValueTooltip@%ç´è´­ä»·æ ¼ã\u003cbr\u003e\u003cbr\u003eå¯¹é£äºææè´­ä¹°çé»é å¨æ¥è¯´éå¸¸ä¸éã","rarity":0,"icon":"assets/ux/cherry/augments/icons/firesale_small.png"},{"id":52,"name":"éªçµæå»","desc":"è·å¾\u003cattackSpeed\u003e@TotalASValue*100@%æ»æ»å»éåº¦\u003c/attackSpeed\u003eã\u003cbr\u003e\u003cbr\u003eå¨@Breakpoint1@\u003cattackSpeed\u003eæ»å»æ¬¡æ°/ç§\u003c/attackSpeed\u003eæ¶ï¼é æé¢å¤ç\u003cmagicDamage\u003eé­æ³ä¼¤å®³\u003c/magicDamage\u003e {{ Item_Keyword_OnHit }}ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/lightningstrikes_small.png"},{"id":314,"name":"è§£è±è\u0085","desc":"ä½ ç°å¨å¯ä»¥å¯¹ä½ çååæ½æ¾\u003cspellName\u003eå\u0085¶äººä¹é\u003c/spellName\u003eï¼çªåå\u0085¶ç»ææè½ã\u003cbr\u003e\u003cbr\u003eåä¸å»ææ¶ï¼åå°@TakedownRefund*100@%\u003cspellName\u003eå\u0085¶äººä¹é\u003c/spellName\u003eå¯¹æ¯ä¸ªè±éççªåéå®æ¶é´åå·å´æ¶é´ã\u003cbr\u003e\u003cbr\u003eè·å¾@UltimateHaste@ç»ææè½æ¥éã","rarity":1,"icon":"assets/ux/cherry/augments/icons/unshackled_small.png"},{"id":69,"name":"éæååº","desc":"å¨ä½ è·ä¸@HealthThreshold1*100@%æ@HealthThreshold2*100@%çå½å¼æ¶ï¼éè¿çæäººä»¬ä¼è¢«\u003cstatus\u003eå»é\u003c/status\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/repulsor_small.png"},{"id":113,"name":"èç»çç¥","desc":"ç¨ä¸ä¸ª\u003ckeywordMajor\u003eéç»ææè½\u003c/keywordMajor\u003eå½ä¸­ä¸ä¸ªè¿å¤çæäººæ¶ï¼å°è¿ä¸ªæè½çå·å´æ¶é´å·¨å¹\u0085ç¼©ç­ã ","rarity":1,"icon":"assets/ux/cherry/augments/icons/skilledsniper_small.png"},{"id":175,"name":"å¯çå\u0085³ç³»","desc":"{{ Cherry_ParasiticRelationship@TeamSize@_Summary }}","rarity":1,"icon":"assets/ux/cherry/augments/icons/parasiticrelationship_small.png"},{"id":165,"name":"éå¯","desc":"ä½ çéç»ææè½æ¯@CoolDown@ç§\u003ckeywordMajor\u003eèªå¨\u003c/keywordMajor\u003eå·æ°ä¸æ¬¡ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/restart_small.png"},{"id":134,"name":"äº®åºä½ çå","desc":"ä½ ç°å¨æ¯è¿æã\u003cbr\u003e\u003cbr\u003eè·å¾\u003cphysicalDamage\u003eæ»å»å\u003c/physicalDamage\u003eã\u003chealing\u003eçå½å¼\u003c/healing\u003eã\u003cattackSpeed\u003eæ»å»éåº¦\u003c/attackSpeed\u003eã\u003clifesteal\u003eçå½å·å\u003c/lifesteal\u003eå\u003cspeed\u003eç§»å¨éåº¦\u003c/speed\u003e (åºäºä½ èå¼çæ»å»è·ç¦»)ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/drawyoursword_small.png"},{"id":70,"name":"æ ä¼åå¤","desc":"ä½ å¨ç§»å¨æ¶æç»­è·å¾\u003chealing\u003eæ²»ç\u003c/healing\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/restlessrestoration_small.png"},{"id":25,"name":"ä¿¯å²è½°ç¸","desc":"ä½ çéä¼å¨æ¯ååçç¬¬ä¸æ¬¡éµäº¡ä¼çç¸ï¼é æ\u003ctrueDamage\u003eå·¨é¢çå®ä¼¤å®³\u003c/trueDamage\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/divebomber_small.png"},{"id":303,"name":"ç®ç¥­ï¼æ¢åé»éé¶","desc":"ç®ç¥­\u003clifeSteal\u003eä½ ç@HealthReduction*100@%å½åçå½å¼\u003c/lifeSteal\u003eã\u003cbr\u003e\u003cbr\u003eå¨@RoundCountCap@åååï¼è·å¾ä¸ä¸ªé¢å¤ç\u003ckeywordMajor\u003eé»éé¶å¼ºåç¬¦æ\u003c/keywordMajor\u003eå¹¶åå¤ä½ ççå½å¼ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/gohsacrificefor_small.png"},{"id":7,"name":"å¤§å","desc":"è·å¾%i:scaleAD%\u003cscaleAD\u003e@ADAmp*100@%æ»å»å\u003c/scaleAD\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/bluntforce_small.png"},{"id":346,"name":"é¢å\u0085ä¸ææ²»","desc":"è·å¾@AbilityHaste@æè½æ¥éã\u003cbr\u003e\u003cbr\u003eæ½æ¾ä¸ä¸ªæè½æç»­ä¼æä¾æç»­@MSDuration@ç§ç@MoveSpeedAmp*100@%ç§»å¨éåº¦ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/bread_sandwhich_small.png"},{"id":109,"name":"èªçº¦è\u0085","desc":"å°\u003cspellName\u003eéªäºº\u003c/spellName\u003eæ¿æ¢ä¸º\u003cspellName\u003eå½è¿çå¬å¤\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003e\u003crules\u003e\u003cspellName\u003eå½è¿çå¬å¤\u003c/spellName\u003eä¼å°ä½ çåååä¸ºä¸å¯è¢«éåç¶æï¼æç»­è³å¤4ç§ãä½ çååå¯ä»¥èªè¡è±èº«ï¼ä»è\u003cstatus\u003eå»é\u003c/status\u003eæäººä»¬ã\u003c/rules\u003e\u003cbr\u003e","rarity":1,"icon":"assets/ux/cherry/augments/icons/oathsworn_small.png"},{"id":336,"name":"çåèè¢","desc":"ä½ ç\u003ccrit\u003eæ´å»å ç\u003c/crit\u003eå°é¡¶å¼ä¸º@CritChanceCeiling*100@%ãå°@CritChanceCeiling*100@%ä¹ä¸ç\u003ccrit\u003e@CritChanceToDamageRatio*100@%æ´å»å ç\u003c/crit\u003eçè½¬åä¸ºæ´å»ä¼¤å®³ã\u003cbr\u003e\u003cbr\u003eè·å¾\u003ccrit\u003e@CritChanceBonus*100@%æ´å»å ç\u003c/crit\u003eå\u003ccrit\u003e@CritDamageBonus*100@%æ´å»ä¼¤å®³\u003c/crit\u003eã ","rarity":1,"icon":"assets/ux/cherry/augments/icons/aim_for_the_head_small.png"},{"id":355,"name":"è·å¾å±æ§é»é å¨","desc":"è·å¾ä¸ä¸ªéæº%i:StatAnvil%å±æ§é»é å¨ã","rarity":4,"icon":"assets/ux/cherry/augments/icons/gain_stat_anvil_small.png"},{"id":358,"name":"ç¼çµçç­","desc":"å¤±å»ä½ åºæçå¤æ´»ã\u003cbr\u003e\u003cbr\u003eæåä½ \u003cscaleHealth\u003e@HealthPercentageMod*100@%çå½å¼\u003c/scaleHealth\u003eã\u003cbr\u003e\u003cbr\u003eå¦æä½ é æçä¼¤å®³ä¼ä½¿ä¸ä¸ªè±éè·å°\u003cscaleHealth\u003e@ExecuteThreshold*100@%æå¤§çå½å¼\u003c/scaleHealth\u003eä»¥ä¸ï¼åå°å\u0085¶å¤å³ã","rarity":4,"icon":"assets/ux/cherry/augments/icons/wolf_small.png"},{"id":366,"name":"æç»æå","desc":"\u003chealing\u003eåå¤@HealthRestorePercent@%ä½ å·²ç®ç¥­ç»å¡å§ççå½å¼\u003c/healing\u003eã\u003cbr\u003e\u003cbr\u003eè·å¾\u003ckeywordMajor\u003e@AnvilsGranted@ä¸ªç½é¶é¶å±æ§é»é å¨\u003c/keywordMajor\u003eã","rarity":4,"icon":"assets/ux/cherry/augments/icons/power_small.png"},{"id":123,"name":"å¬å¤å¸å³¡è°·çè½®ç","desc":"å°ä½ ç\u003cattention\u003eå¬å¤å¸æè½\u003c/attention\u003eç¨éæºå¬å¤å¸æè½æ¿æ¢ã\u003cbr\u003e\u003cbr\u003eå½ä½ æ½æ¾äºä¸ä¸ª\u003cattention\u003eå¬å¤å¸æè½\u003c/attention\u003eåï¼å°å\u0085¶æ¿æ¢ä¸ºå¦ä¸ä¸ªéæºå¬å¤å¸æè½å¹¶æ¥æ@Cooldown@ç§å·å´æ¶é´ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/summonersroulette_small.png"},{"id":302,"name":"ç®ç¥­ï¼æ¢åç½é¶é¶","desc":"å¨@RoundCountCap@åååï¼è·å¾ä¸ä¸ªé¢å¤ç\u003ckeywordMajor\u003eç½é¶é¶å¼ºåç¬¦æ\u003c/keywordMajor\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/gohsacrificefor_small.png"},{"id":74,"name":"ç¼©å°å°çº¿","desc":"ä½ çæ»å»ä¼å°ç®æ çä¼¤å®³ä¸ä½ååå@DamageReduction*100@%{{ Item_Keyword_OnHit }}ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/shrinkray_small.png"},{"id":12,"name":"çè½¦æä½","desc":"è·å¾å¬å¤å¸æè½\u003cspellName\u003eçè½¦æä½\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003e\u003crules\u003e\u003cspellName\u003eçè½¦æä½ï¼\u003c/spellName\u003eä¸ä½ çååäº¤æ¢ä½ç½®ï¼å¹¶è·å¾\u003cspeed\u003eç§»å¨éåº¦\u003c/speed\u003eåä¸ä¸ª\u003cshield\u003eæ¤ç¾\u003c/shield\u003eã\u003c/rules\u003e","rarity":0,"icon":"assets/ux/cherry/augments/icons/castle_small.png"},{"id":152,"name":"ä»»å¡ï¼é¢åä½ å¿","desc":"éæ±ï¼ææãå¿ä¹é¢ãä¸å±æ°å¨@StackThreshold@å±æä»¥ä¸ã\u003cbr\u003e\u003cbr\u003eå¥å±ï¼å°ä½ çå¿ä¹é¢å±æ°ä¹ä»¥@StackMultiplication@ãä½¿ä½ ç\u003chealing\u003eçå½åå¤\u003c/healing\u003eæå@StacktoRegenConversion*100@%xä½ çãå¿ä¹é¢ãå±æ°ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/quest_steelyourheart_small.png"},{"id":32,"name":"è£å³ä½¿","desc":"å¯¹çå½å¼ä½äº@HealthThreshold*100@%çæäººä»¬å¤é æ@BonusDamage*100@%ä¼¤å®³ãå¨åä¸å»æåéç½®ä½ çåºç¡æè½ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/executioner_small.png"},{"id":18,"name":"å·¨åçåæ°","desc":"\u003cstatus\u003eå®èº«\u003c/status\u003eæ\u003cstatus\u003eç¼å°\u003c/status\u003eä¸ä¸ªææ¹è±éåè·å¾\u003cshield\u003e@TotalShield@æ¤ç¾å¼\u003c/shield\u003eã\u003cbr\u003e","rarity":2,"icon":"assets/ux/cherry/augments/icons/courageofthecolossus_small.png"},{"id":222,"name":"ä½ çå³å¨æå®","desc":"è½éè±åå¨ä½ èº«ä¸çæè½æå@AmpAmount*100@%ï¼å¹¶ä¸è¿ä¼åäº«ç»ä½ çååã","rarity":0,"icon":"assets/ux/cherry/augments/icons/fruitarian_small.png"},{"id":46,"name":"ç¼ç±é¾é­","desc":"ä½ è·å¾ç¼ç±é¾é­ï¼ä½¿ç¨æè½ææ»å»å½ä¸­æäººæ¶é æé¢å¤ä¼¤å®³ã","rarity":0,"icon":"assets/ux/cherry/augments/icons/infernalsoul_small.png"},{"id":16,"name":"è¿æå¤§å¸","desc":"è·å¾\u003cspellName\u003eçµå\u003c/spellName\u003eå\u003cspellName\u003eç¸ä½çå²\u003c/spellName\u003eåºç³ç¬¦æã","rarity":1,"icon":"assets/ux/cherry/augments/icons/combomaster_small.png"},{"id":215,"name":"é»æèµç¦","desc":"ä¸ºä¸ä¸ªååæä¾\u003chealing\u003eæ²»ç\u003c/healing\u003eæ\u003cshield\u003eæ¤ç¾\u003c/shield\u003eï¼ä¼ä¸ºä½ æä¾æ°¸ä¹\u0085ç\u003ckeywordMajor\u003eè¯\u0085åè½é\u003c/keywordMajor\u003eãè·å¾æè½æ¥éï¼åºäºä½ ç\u003ckeywordMajor\u003eè¯\u0085åè½é\u003c/keywordMajor\u003eã","rarity":1,"icon":"assets/ux/cherry/augments/icons/darkblessing_small.png"},{"id":56,"name":"ç±å¿åç©","desc":"ä½¿ä½ ç\u003cscaleHealth\u003eæå¤§çå½å¼\u003c/scaleHealth\u003eæåï¼æ°é¢ç¸å½äºä½ ä¸åç\u003cscaleMana\u003eæ³åå¼\u003c/scaleMana\u003eã","rarity":0,"icon":"assets/ux/cherry/augments/icons/mindtomatter_small.png"},{"id":211,"name":"ææ®æ¶é´å°äº","desc":"å¨æ½æ¾ä½ ç\u003ckeywordMajor\u003eç»ææè½\u003c/keywordMajor\u003eåï¼å°æææäººæä¸æ­»äº¡æ è®°ã\u003cbr\u003e\u003cbr\u003eå¯¹å¸¦æ è®°çæäººé æä¼¤å®³æ¶ï¼ä¼å°ä¸é¨åå·²é æä¼¤å®³å¨å­èµ·æ¥ï¼ç¶åå¨æ è®°ç»ææ¶å°å·²å¨å­çä¼¤å®³å¼çã","rarity":1,"icon":"assets/ux/cherry/augments/icons/itskillingtime_small.png"},{"id":96,"name":"æ¶å\u0085ä¹æºæ\u0085§","desc":"ç«å»æå1çº§ï¼å¹¶ä¸æ¯é1ååé¢å¤æå1çº§ã\u003cbr\u003e\u003cbr\u003eä½ çç­çº§ä¸éå·²è¢«ç§»é¤ã\u003cbr\u003e\u003cbr\u003e\u003crules\u003eå¦æå¨@RoundCounterForBonus@åååéåï¼è·å¾@BonusForLatePick@é¢å¤ç­çº§ã\u003c/rules\u003e","rarity":2,"icon":"assets/ux/cherry/augments/icons/wisdomofages_small.png"},{"id":304,"name":"ç®ç¥­ï¼æ¢åæ£±å½©é¶","desc":"ç®ç¥­\u003clifeSteal\u003eä½ ç@HealthReduction*100@%å½åçå½å¼\u003c/lifeSteal\u003eã\u003cbr\u003e\u003cbr\u003eå¨@RoundCountCap@åååï¼è·å¾ä¸ä¸ªé¢å¤ç\u003ckeywordMajor\u003eæ£±å½©é¶å¼ºåç¬¦æ\u003c/keywordMajor\u003eå¹¶åå¤ä½ ççå½å¼ã","rarity":2,"icon":"assets/ux/cherry/augments/icons/gohsacrificefor_small.png"},{"id":43,"name":"ä½ç§»é­æ¯","desc":"è·å¾å¬å¤å¸æè½\u003cspellName\u003eä½ç§»é­æ¯\u003c/spellName\u003eã\u003cbr\u003e\u003cbr\u003e\u003crules\u003e\u003cspellName\u003eä½ç§»é­æ¯\u003c/spellName\u003eå¯å°ä½ ä¼ éåä½ æåä¸ä¸ªç§»å¨æè½çåå§ä½ç½®ã\u003c/rules\u003e","rarity":0,"icon":"assets/ux/cherry/augments/icons/nowyouseeme_small.png"},{"id":64,"name":"åé§","desc":"è·å¾å·¨å¹\u0085æåç\u003chealing\u003eçå½åå¤\u003c/healing\u003eï¼è¿ä¸ªæ°é¢ä¼å¨ä½\u003cscaleHealth\u003eçå½å¼\u003c/scaleHealth\u003eæ¶è¿ä¸æ­¥æåã","rarity":1,"icon":"assets/ux/cherry/augments/icons/perseverance_small.png"},{"id":48,"name":"ç å\u0085æ¤æ","desc":"ä½ çæè½å¯ä»¥é æ\u003ccrit\u003eæ´å»\u003c/crit\u003eã\u003cbr\u003e\u003cbr\u003eè·å¾\u003ccrit\u003e%i:scaleCrit%@CritGranted@%æ´å»å ç\u003c/crit\u003eã","rarity":2,"icon":"assets/ux/cherry/augments/icons/jeweledgauntlet_small.png"},{"id":309,"name":"è¿ææçæ§å¤´ï¼","desc":"\u003ckeywordMajor\u003eèªå¨æ½æ¾\u003c/keywordMajor\u003eï¼\u003cbr\u003eå¨ææ§å°æç¸è·æè¿çé£ä¸ªå¯¹æææ·ä¸ææ§å¤´ï¼ä»èé æ\u003cphysicalDamage\u003eç©çä¼¤å®³\u003c/physicalDamage\u003eã\u003cstatus\u003eåé\u003c/status\u003eãå¹¶ä¸å»ç¢\u003cscaleArmor\u003eæ¤ç²\u003c/scaleArmor\u003eå\u003cscaleMR\u003eé­æ\u003c/scaleMR\u003eãæ¾åè¿ææ§å¤´ä¼éä½å\u0085¶å·å´æ¶é´ã","rarity":1,"icon":"assets/ux/cherry/augments/icons/andmyaxe_small.png"}];
+
+</script>
+<script>
+/* ============================================================
+ *  LOL 英雄对战助手  —  app.js
+ *  数据：官方 Data Dragon（英雄/头像/名称） + 内置策略数据（克制/大乱斗）
+ * ============================================================ */
+
+const DDRAGON = "https://ddragon.leagueoflegends.com";
+const LANES = [
+  { key: "all", label: "全部" },
+  { key: "top", label: "上单" },
+  { key: "jungle", label: "打野" },
+  { key: "mid", label: "中单" },
+  { key: "adc", label: "下路" },
+  { key: "support", label: "辅助" },
+];
+const ROLE_LABEL = { top: "上单", jungle: "打野", mid: "中单", adc: "下路", support: "辅助" };
+const CLASS_LABEL = { fighter: "战士", mage: "法师", assassin: "刺客", marksman: "射手", tank: "坦克", support: "辅助", tanks: "坦克" };
+const TIER_VAL = { S: 5, A: 4, B: 3, C: 2, D: 1 };
+const TIER_DESC = {
+  S: "大乱斗顶级，开箱即强",
+  A: "大乱斗强势，优先考虑",
+  B: "大乱斗中规中矩",
+  C: "大乱斗偏弱，需要配合",
+  D: "大乱斗吃力，不推荐",
+};
+// 阵容对比展示的维度（顺序）
+const CMP_DIMS = ["engage", "poke", "aoe", "sustain", "frontline", "cc", "dive", "peel"];
+
+// ---------- 全局状态 ----------
+let VERSION = LOL_DATA.patch || "16.23.1";
+let CHAMPS = [];                // [{id, cn, en, roles, img, aram, tags, strong, weak, hasData}]
+const byId = {};               // id -> champ
+const byNorm = {};             // 归一化名(英文/字母数字) -> champ
+const byCn = {};               // 中文名 / 中文别称 -> champ
+const STRAT = (window.LOL_LIVE && window.LOL_LIVE.champ) ? window.LOL_LIVE.champ : LOL_DATA.champ;
+
+let RUNES = {};   // 英文key -> {id,name,icon,treeKey}
+let TREES = {};   // 系key -> {name,icon}
+let AUGMENTS = [];// 海克斯强化 [{id,name,desc,icon,rarity,cats}]
+
+const CDRAGON = "https://raw.communitydragon.org/latest/game/";
+const RARITY = { 0: { label: "白银", cls: "r-silver" }, 1: { label: "黄金", cls: "r-gold" }, 2: { label: "棱彩", cls: "r-prism" }, 3: { label: "棱彩", cls: "r-prism" }, 4: { label: "棱彩", cls: "r-prism" } };
+// 强化类型（按关键词归类，用于筛选 + 按英雄打法匹配）
+const AUG_CATS = {
+  ap:      { label: "法强",   kw: ["法术强度", "法强", "法术伤害", "魔法伤害"] },
+  ad:      { label: "攻击",   kw: ["攻击力", "物理伤害", "攻击伤害", "穿甲", "护甲穿透"] },
+  crit:    { label: "暴击",   kw: ["暴击"] },
+  as:      { label: "攻速",   kw: ["攻击速度"] },
+  sustain: { label: "续航",   kw: ["吸血", "治疗", "全能吸血", "生命偷取", "回复", "护盾", "续航"] },
+  tank:    { label: "坦度",   kw: ["护甲", "魔法抗性", "魔抗", "减伤", "韧性", "格挡", "最大生命值", "生命值上限"] },
+  haste:   { label: "急速",   kw: ["技能急速", "冷却", "急速"] },
+  move:    { label: "机动",   kw: ["移动速度", "位移", "疾跑", "闪现"] },
+};
+
+// 国服（腾讯）资源，国内可访问
+const GT = "https://game.gtimg.cn/images/lol/act/img/";
+const norm = (s) => (s || "").toString().toLowerCase().replace(/[^a-z0-9]/g, "");
+const imgUrl = (id) => `${GT}champion/${id}.png`;          // 国服英雄头像
+const runeImg = (icon) => `${DDRAGON}/cdn/img/${icon}`;    // 符文图标（Riot，国内可能失败→自动隐藏）
+const augImg = (icon) => CDRAGON + (icon || "").toLowerCase(); // 强化图标（同上）
+const DETAIL_CACHE = {};  // id -> {hero, spells, skins}
+const $ = (id) => document.getElementById(id);
+
+// 把策略数据里的名字（可能带空格/符号/中文）解析成英雄对象
+function resolveChamp(name) {
+  if (!name) return null;
+  if (byId[name]) return byId[name];
+  if (byCn[name]) return byCn[name];
+  const n = norm(name);
+  return (n && byNorm[n]) || null;
+}
+
+// ============================================================
+//  加载数据
+// ============================================================
+async function boot() {
+  try {
+    // 符文 / 海克斯强化：用打包数据（不联网，国内可用）
+    if (window.LOL_RUNES) RUNES = window.LOL_RUNES;
+    if (window.LOL_TREES) TREES = window.LOL_TREES;
+    if (window.LOL_AUGMENTS) indexAugments(window.LOL_AUGMENTS);
+
+    // 英雄：国服数据（gtimg.cn，国内可访问）
+    const list = await fetch(`${GT}js/heroList/hero_list.js`).then(r => r.json());
+    CHAMPS = (list.hero || []).map(h => {
+      const id = h.alias;                 // 英文ID，与内置数据键一致
+      const s = STRAT[id] || null;
+      return {
+        id, heroId: h.heroId,
+        cn: h.name,
+        en: h.alias,
+        title: h.title,
+        classes: h.roles || [],           // 国服职业标签（小写：fighter/mage/...）
+        info: { attack: +h.attack || 0, defense: +h.defense || 0, magic: +h.magic || 0, difficulty: +h.difficulty || 0 },
+        stats: {},
+        keywords: h.keywords || "",        // 国服自带：外号 + 拼音
+        roles: s ? (s.lanes || []) : [],
+        aram: s ? s.aram : null,
+        tags: s ? (s.tags || []) : [],
+        strong: s ? (s.strong || []) : [],
+        weak: s ? (s.weak || []) : [],
+        aliases: (LOL_DATA.alias && LOL_DATA.alias[id]) || [],
+        rank: (LOL_DATA.rankTier && LOL_DATA.rankTier[id]) || null,
+        hasData: !!s,
+      };
+    });
+    CHAMPS.sort((a, b) => a.cn.localeCompare(b.cn, "zh-CN"));
+    CHAMPS.forEach(c => {
+      byId[c.id] = c;
+      byCn[c.cn] = c;
+      [norm(c.id), norm(c.en), norm(c.cn)].forEach(k => { if (k && !byNorm[k]) byNorm[k] = c; });
+      c.aliases.forEach(a => {
+        if (!byCn[a]) byCn[a] = c;
+        const k = norm(a); if (k && !byNorm[k]) byNorm[k] = c;
+      });
+    });
+
+    $("meta").innerHTML = `数据源 <b>国服</b> · 英雄 <b>${CHAMPS.length}</b><br>克制数据已覆盖 <b>${CHAMPS.filter(c => c.hasData).length}</b> 位`;
+
+    initTabs();
+    initLibrary();
+    initCounter();
+    initAram();
+    initTierTab();
+    initAugmentTab();
+    initRanked();
+  } catch (e) {
+    console.error(e);
+    document.querySelector("main").innerHTML =
+      `<div class="loading" style="color:#ff6b6b">⚠️ 英雄数据加载失败<br><br>
+       <span style="font-size:13px;color:#7c8798">请检查网络能否访问 game.gtimg.cn（国服资源站），然后刷新页面。<br>错误：${e.message}</span></div>`;
+  }
+}
+
+// ============================================================
+//  顶部标签切换
+// ============================================================
+function initTabs() {
+  $("tabs").addEventListener("click", e => {
+    const btn = e.target.closest(".tab");
+    if (!btn) return;
+    document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t === btn));
+    const v = btn.dataset.view;
+    document.querySelectorAll(".view").forEach(s => s.classList.toggle("active", s.id === "view-" + v));
+  });
+}
+
+function laneButtons(container, onPick) {
+  container.innerHTML = "";
+  LANES.forEach((l, i) => {
+    const b = document.createElement("button");
+    b.className = "lanebtn" + (i === 0 ? " active" : "");
+    b.textContent = l.label;
+    b.dataset.lane = l.key;
+    b.onclick = () => {
+      container.querySelectorAll(".lanebtn").forEach(x => x.classList.toggle("active", x === b));
+      onPick(l.key);
+    };
+    container.appendChild(b);
+  });
+}
+
+function matchLane(champ, lane) {
+  if (lane === "all") return true;
+  return champ.roles.includes(lane);
+}
+function matchSearch(champ, q) {
+  if (!q) return true;
+  const n = q.toLowerCase();
+  const nq = norm(q);
+  if (champ.cn.includes(q) || champ.en.toLowerCase().includes(n) || (nq && norm(champ.en).includes(nq))) return true;
+  if ((champ.aliases || []).some(a => a.includes(q) || a.toLowerCase().includes(n))) return true;
+  return champ.keywords ? champ.keywords.toLowerCase().includes(n) : false;  // 国服自带外号/拼音
+}
+
+// ---------- 符文索引 & 推荐 ----------
+function indexRunes(data) {
+  data.forEach(tree => {
+    TREES[tree.key] = { name: tree.name, icon: tree.icon };
+    tree.slots.forEach(slot => slot.runes.forEach(r => {
+      RUNES[r.key] = { id: r.id, name: r.name, icon: r.icon, treeKey: tree.key };
+    }));
+  });
+}
+
+function classifyBuild(c) {
+  if (LOL_DATA.build && LOL_DATA.build[c.id]) return LOL_DATA.build[c.id];
+  const cl = (c.classes || []).map(x => String(x).toLowerCase()), t = c.tags || [];
+  if (cl.includes("support") || (t.includes("peel") && t.includes("sustain"))) return "enchanter";
+  if (cl.includes("marksman") || c.roles.includes("adc")) return "adc_dps";
+  if (cl.includes("tank")) return "tank";
+  if (cl.includes("mage")) return "ap_poke";
+  if (cl.includes("assassin")) return "assassin_ad";
+  return "bruiser";
+}
+
+function runeSlotHTML(key, big) {
+  const r = RUNES[key];
+  if (!r) return `<div class="rune${big ? " ks" : ""}"><span class="rt">${key}</span></div>`;
+  return `<div class="rune${big ? " ks" : ""}" title="${r.name}"><img src="${runeImg(r.icon)}" onerror="this.style.display='none'"><span class="rt">${r.name}</span></div>`;
+}
+
+function runeRecoHTML(c) {
+  const b = classifyBuild(c);
+  const bd = LOL_DATA.runeBuilds[b];
+  if (!bd || !Object.keys(RUNES).length) return "";
+  const pTree = TREES[bd.primary] || { name: bd.primary, icon: "" };
+  const sTree = TREES[bd.secondary] || { name: bd.secondary, icon: "" };
+  const label = (LOL_DATA.buildLabel && LOL_DATA.buildLabel[b]) || b;
+  return `
+    <div class="rune-tag">推荐定位：<b>${label}</b></div>
+    <div class="rune-reco">
+      <div class="rune-col primary">
+        <div class="rune-tree">${pTree.icon ? `<img src="${runeImg(pTree.icon)}" onerror="this.style.display='none'">` : ""}主系 · ${pTree.name}</div>
+        ${runeSlotHTML(bd.keystone, true)}
+        <div class="rune-minors">${bd.runes.map(k => runeSlotHTML(k)).join("")}</div>
+      </div>
+      <div class="rune-col">
+        <div class="rune-tree">${sTree.icon ? `<img src="${runeImg(sTree.icon)}" onerror="this.style.display='none'">` : ""}副系 · ${sTree.name}</div>
+        <div class="rune-minors">${bd.sub.map(k => runeSlotHTML(k)).join("")}</div>
+        <div class="rune-shards"><span>属性碎片</span>${bd.shards.join(" · ")}</div>
+      </div>
+    </div>`;
+}
+
+// ---------- 海克斯强化（竞技场强化）----------
+function cleanDesc(s) {
+  return (s || "").replace(/<[^>]+>/g, "").replace(/@[^@]*@/g, "?").replace(/\s+/g, " ").trim();
+}
+function categorizeAug(name, desc) {
+  const text = (name || "") + " " + (desc || "");
+  const cats = [];
+  for (const k in AUG_CATS) if (AUG_CATS[k].kw.some(w => text.includes(w))) cats.push(k);
+  return cats;
+}
+function indexAugments(list) {
+  // 兼容打包格式（icon）与原始竞技场格式（iconSmall）
+  AUGMENTS = list.filter(a => a.name && (a.icon || a.iconSmall)).map(a => {
+    const desc = cleanDesc(a.desc || a.tooltip);
+    return { id: a.id, name: a.name, desc, icon: a.icon || a.iconSmall, rarity: a.rarity, cats: categorizeAug(a.name, desc) };
+  });
+}
+
+// 每种打法偏好的强化类型（按优先级）
+const BUILD_AUG_PREF = {
+  bruiser:     ["ad", "sustain", "haste", "tank", "as"],
+  adc_dps:     ["ad", "as", "crit", "sustain"],
+  adc_burst:   ["ad", "crit", "as", "sustain"],
+  assassin_ad: ["ad", "crit", "haste", "move"],
+  assassin_ap: ["ap", "haste", "move", "sustain"],
+  ap_poke:     ["ap", "haste", "sustain"],
+  ap_scale:    ["ap", "haste", "sustain"],
+  tank:        ["tank", "sustain", "haste", "ap"],
+  enchanter:   ["ap", "sustain", "haste", "move"],
+};
+
+function recommendAugments(c, limit) {
+  if (!AUGMENTS.length) return [];
+  const build = classifyBuild(c);
+  const pref = BUILD_AUG_PREF[build] || ["ad", "ap", "sustain", "haste"];
+  const scored = AUGMENTS.map(a => {
+    let score = 0;
+    a.cats.forEach(cat => {
+      const idx = pref.indexOf(cat);
+      if (idx >= 0) score += (pref.length - idx) * 2;  // 越靠前的偏好分越高
+    });
+    score += (a.rarity === 2 || a.rarity >= 4) ? 1.5 : a.rarity === 1 ? 0.8 : 0; // 稀有度小加成
+    return { a, score };
+  }).filter(x => x.score > 0);
+  scored.sort((x, y) => y.score - x.score || y.a.rarity - x.a.rarity);
+  return scored.slice(0, limit || 9).map(x => x.a);
+}
+
+function augCardHTML(a, compact) {
+  const r = RARITY[a.rarity] || RARITY[1];
+  if (compact) {
+    return `<div class="aug mini ${r.cls}" title="${a.desc}">
+      <img loading="lazy" src="${augImg(a.icon)}" alt="" onerror="this.style.display='none'">
+      <div class="aug-nm">${a.name}</div>
+    </div>`;
+  }
+  return `<div class="aug ${r.cls}">
+    <div class="aug-top"><img loading="lazy" src="${augImg(a.icon)}" alt="" onerror="this.style.display='none'">
+      <div><div class="aug-nm">${a.name}</div><div class="aug-rr">${r.label}</div></div></div>
+    <div class="aug-desc">${a.desc}</div>
+  </div>`;
+}
+
+// ---------- 海克斯强化图鉴页 ----------
+function initAugmentTab() {
+  let rarity = "all", type = "all", q = "";
+  const grid = $("augGrid");
+  const render = () => {
+    if (!AUGMENTS.length) { grid.innerHTML = `<div class="empty">海克斯强化数据未能加载（需联网访问 CommunityDragon）。</div>`; return; }
+    const list = AUGMENTS.filter(a =>
+      (rarity === "all" || String(a.rarity) === rarity) &&
+      (type === "all" || a.cats.includes(type)) &&
+      (!q || a.name.includes(q) || a.desc.includes(q))
+    );
+    grid.innerHTML = list.length
+      ? `<div class="aug-count">共 ${list.length} 个强化</div>` + list.map(a => augCardHTML(a)).join("")
+      : `<div class="empty">没有匹配的强化</div>`;
+  };
+  // 稀有度筛选
+  const rar = [["all", "全部稀有度"], ["0", "白银"], ["1", "黄金"], ["2", "棱彩"], ["4", "棱彩+"]];
+  $("augRarity").innerHTML = "";
+  rar.forEach((x, i) => {
+    const b = document.createElement("button");
+    b.className = "lanebtn" + (i === 0 ? " active" : ""); b.textContent = x[1];
+    b.onclick = () => { rarity = x[0]; $("augRarity").querySelectorAll(".lanebtn").forEach(z => z.classList.toggle("active", z === b)); render(); };
+    $("augRarity").appendChild(b);
+  });
+  // 类型筛选
+  const types = [["all", "全部类型"]].concat(Object.keys(AUG_CATS).map(k => [k, AUG_CATS[k].label]));
+  $("augType").innerHTML = "";
+  types.forEach((x, i) => {
+    const b = document.createElement("button");
+    b.className = "lanebtn" + (i === 0 ? " active" : ""); b.textContent = x[1];
+    b.onclick = () => { type = x[0]; $("augType").querySelectorAll(".lanebtn").forEach(z => z.classList.toggle("active", z === b)); render(); };
+    $("augType").appendChild(b);
+  });
+  $("augSearch").addEventListener("input", e => { q = e.target.value.trim(); render(); });
+  render();
+}
+
+function augRecoHTML(c) {
+  const list = recommendAugments(c, 9);
+  if (!list.length) return "";
+  const build = classifyBuild(c);
+  const pref = (BUILD_AUG_PREF[build] || []).map(k => AUG_CATS[k] && AUG_CATS[k].label).filter(Boolean);
+  return `
+    <div class="rune-tag">优先方向：<b>${pref.join(" › ")}</b></div>
+    <div class="aug-list">${list.map(a => augCardHTML(a, true)).join("")}</div>
+    <div class="nodata" style="margin-top:8px;font-size:11px">※ 按英雄打法匹配的方向示例，非官方榜单；完整强化见顶部「海克斯强化」。</div>`;
+}
+
+// ---------- 技能 / 面板 / 皮肤 / 伤害类型 ----------
+function diffBand(c) {
+  const d = (c.info && c.info.difficulty) || 0;
+  return d <= 3 ? "easy" : d <= 7 ? "mid" : "hard";
+}
+const DIFF_LABEL = { easy: "简单", mid: "适中", hard: "困难" };
+function dmgType(c) {
+  const b = classifyBuild(c);
+  if (["ap_poke", "ap_scale", "assassin_ap", "enchanter"].includes(b)) return "AP";
+  if (["adc_dps", "adc_burst", "assassin_ad"].includes(b)) return "AD";
+  if (b === "tank") return "TANK";
+  if ((c.classes || []).map(x => String(x).toLowerCase()).includes("mage")) return "AP";
+  return "AD";
+}
+const DMG_LABEL = { AD: "物理", AP: "法术", TANK: "坦克" };
+
+async function loadChampDetail(id) {
+  if (id in DETAIL_CACHE) return DETAIL_CACHE[id];
+  try {
+    const c = byId[id];
+    const d = await fetch(`${GT}js/hero/${c.heroId}.js`).then(r => r.json());
+    DETAIL_CACHE[id] = { hero: d.hero || {}, spells: d.spells || [], skins: d.skins || [] };
+  } catch (e) { DETAIL_CACHE[id] = null; }
+  return DETAIL_CACHE[id];
+}
+
+const SPELL_ORDER = { passive: 0, q: 1, w: 2, e: 3, r: 4 };
+const SPELL_LABEL = { passive: "被动", q: "Q", w: "W", e: "E", r: "R" };
+function skillsHTML(detail) {
+  if (!detail || !detail.spells || !detail.spells.length) return '<div class="nodata">技能数据加载失败。</div>';
+  const spells = [...detail.spells].sort((a, b) => (SPELL_ORDER[a.spellKey] ?? 9) - (SPELL_ORDER[b.spellKey] ?? 9));
+  return spells.map(s => {
+    const k = s.spellKey;
+    const cd = s.cooldownburn && s.cooldownburn !== "0" ? `冷却 ${s.cooldownburn}s` : "";
+    const cost = s.costburn && s.costburn !== "0" && s.costburn !== "无" ? ` · 消耗 ${s.costburn}` : "";
+    const meta = (cd || cost) ? `<small>${cd}${cost}</small>` : "";
+    return `<div class="skill"><div class="skill-ic"><img src="${s.abilityIconPath}" onerror="this.style.visibility='hidden'"><span class="kb${k === 'passive' ? ' pas' : ''}">${SPELL_LABEL[k] || (k || '').toUpperCase()}</span></div>
+      <div class="skill-tx"><div class="skill-nm">${s.name}${meta}</div><div class="skill-ds">${cleanDesc(s.description)}</div></div></div>`;
+  }).join("");
+}
+
+function statBar(label, val) {
+  const w = Math.min(100, (val / 10) * 100);
+  return `<div class="stat-row"><span class="stat-l">${label}</span><div class="stat-bar"><i style="width:${w}%"></i></div><span class="stat-v">${val}</span></div>`;
+}
+function statsHTML(c) {
+  const info = c.info || {};
+  const bars = [statBar("攻击", info.attack || 0), statBar("防御", info.defense || 0),
+    statBar("法术", info.magic || 0), statBar("难度", info.difficulty || 0)].join("");
+  return `<div class="stat-wrap"><div class="stat-bars">${bars}</div><div class="base-grid" id="mBase"></div></div>`;
+}
+function baseStatsHTML(hero) {
+  if (!hero) return "";
+  const n = v => Math.round(parseFloat(v) || 0);
+  const base = [["生命", n(hero.hp)], ["护甲", n(hero.armor)], ["魔抗", n(hero.spellblock)],
+    ["攻击力", n(hero.attackdamage)], ["移速", n(hero.movespeed)], ["攻击距离", n(hero.attackrange)]];
+  return base.map(x => `<div class="base-cell"><span>${x[0]}</span><b>${x[1]}</b></div>`).join("");
+}
+
+function skinsHTML(detail) {
+  if (!detail || !detail.skins || detail.skins.length <= 1) return "";
+  const total = detail.skins.length;
+  const shown = detail.skins.slice(0, 12);
+  const list = shown.map(s => {
+    const nm = s.name || "默认";
+    const img = s.loadingImg || s.iconImg || s.mainImg || "";
+    return `<div class="skin"><img loading="lazy" src="${img}" alt="" onerror="this.style.display='none';this.parentNode.classList.add('noimg')"><span>${nm}</span></div>`;
+  }).join("");
+  const more = total > 12 ? `<div class="nodata" style="margin-top:8px;font-size:11px">共 ${total} 款皮肤，仅展示前 12 款。</div>` : "";
+  return `<div class="sec-title"><span class="em">🎨</span> 皮肤原画（${total}）</div><div class="skins">${list}</div>${more}`;
+}
+
+// ---------- 强度榜 ----------
+const TIER_ORDER = ["S", "A", "B", "C", "D"];
+function initTierTab() {
+  let mode = "aram", lane = "all";
+  const tierList = $("tierList");
+  const render = () => {
+    $("tierLane").style.display = mode === "rank" ? "flex" : "none";
+    const rows = TIER_ORDER.map(t => {
+      const members = mode === "aram"
+        ? CHAMPS.filter(c => c.aram === t)
+        : CHAMPS.filter(c => c.rank === t && (lane === "all" || c.roles.includes(lane)));
+      if (!members.length) return "";
+      members.sort((a, b) => a.cn.localeCompare(b.cn, "zh-CN"));
+      return `<div class="tier-row">
+        <div class="tier-badge t-${t}">${t}</div>
+        <div class="tier-champs">${members.map(c => champCardHTML(c, false)).join("")}</div>
+      </div>`;
+    }).join("");
+    tierList.innerHTML = rows || `<div class="empty">该分路暂无评级数据</div>`;
+  };
+  const modes = [["aram", "大乱斗榜"], ["rank", "排位榜"]];
+  $("tierMode").innerHTML = "";
+  modes.forEach((m, i) => {
+    const b = document.createElement("button");
+    b.className = "lanebtn" + (i === 0 ? " active" : ""); b.textContent = m[1];
+    b.onclick = () => { mode = m[0]; $("tierMode").querySelectorAll(".lanebtn").forEach(z => z.classList.toggle("active", z === b)); render(); };
+    $("tierMode").appendChild(b);
+  });
+  laneButtons($("tierLane"), l => { lane = l; render(); });
+  tierList.addEventListener("click", e => { const card = e.target.closest(".champ"); if (card) openDetail(card.dataset.id); });
+  render();
+}
+
+function champCardHTML(c, showTier = true) {
+  const tier = showTier && c.aram ? `<div class="tierbadge t-${c.aram}">${c.aram}</div>` : "";
+  return `<div class="champ" data-id="${c.id}">
+    ${tier}
+    <img loading="lazy" src="${imgUrl(c.id)}" alt="${c.cn}">
+    <div class="cn">${c.cn}</div><div class="en">${c.en}</div>
+  </div>`;
+}
+
+// ============================================================
+//  英雄库
+// ============================================================
+function initLibrary() {
+  let lane = "all", q = "", dmg = "all", diff = "all";
+  const grid = $("libGrid");
+  const render = () => {
+    const list = CHAMPS.filter(c => matchLane(c, lane) && matchSearch(c, q)
+      && (dmg === "all" || dmgType(c) === dmg)
+      && (diff === "all" || diffBand(c) === diff));
+    grid.innerHTML = list.length
+      ? list.map(c => champCardHTML(c)).join("")
+      : `<div class="empty">没有匹配的英雄</div>`;
+  };
+  laneButtons($("libLanes"), l => { lane = l; render(); });
+  // 伤害类型 + 难度 筛选
+  const extra = $("libExtra");
+  const groups = [
+    { set: v => { dmg = v; }, cur: () => dmg, items: [["all", "全部伤害"], ["AD", "物理"], ["AP", "法术"], ["TANK", "坦克"]] },
+    { set: v => { diff = v; }, cur: () => diff, items: [["all", "全部难度"], ["easy", "简单"], ["mid", "适中"], ["hard", "困难"]] },
+  ];
+  extra.innerHTML = "";
+  groups.forEach((g, gi) => {
+    g._btns = [];
+    if (gi) { const sep = document.createElement("span"); sep.className = "flt-sep"; extra.appendChild(sep); }
+    g.items.forEach((it, i) => {
+      const b = document.createElement("button");
+      b.className = "lanebtn sm" + (i === 0 ? " active" : ""); b.textContent = it[1];
+      b.onclick = () => { g.set(it[0]); g._btns.forEach(z => z.classList.toggle("active", z === b)); render(); };
+      extra.appendChild(b);
+      g._btns.push(b);
+    });
+  });
+  $("libSearch").addEventListener("input", e => { q = e.target.value.trim(); render(); });
+  grid.addEventListener("click", e => {
+    const card = e.target.closest(".champ");
+    if (card) openDetail(card.dataset.id);
+  });
+  render();
+}
+
+// ============================================================
+//  克制查询（复用详情弹窗，聚焦克制）
+// ============================================================
+function initCounter() {
+  let lane = "all", q = "";
+  const grid = $("cntGrid");
+  const render = () => {
+    const list = CHAMPS.filter(c => matchLane(c, lane) && matchSearch(c, q));
+    grid.innerHTML = list.map(c => champCardHTML(c, false)).join("");
+  };
+  laneButtons($("cntLanes"), l => { lane = l; render(); });
+  $("cntSearch").addEventListener("input", e => { q = e.target.value.trim(); render(); });
+  grid.addEventListener("click", e => {
+    const card = e.target.closest(".champ");
+    if (card) openDetail(card.dataset.id);
+  });
+  render();
+}
+
+// ============================================================
+//  详情弹窗
+// ============================================================
+function chipHTML(name) {
+  const c = resolveChamp(name);
+  if (c) return `<div class="cnt-chip" data-id="${c.id}"><img src="${imgUrl(c.id)}"><span>${c.cn}</span></div>`;
+  return `<div class="cnt-chip"><span style="padding-left:8px">${name}</span></div>`;
+}
+
+function openDetail(id) {
+  const c = byId[id];
+  if (!c) return;
+  const roles = c.roles.length
+    ? c.roles.map(r => `<span class="rolechip">${ROLE_LABEL[r] || r}</span>`).join("")
+    : (c.classes.length ? c.classes.map(x => `<span class="rolechip">${CLASS_LABEL[String(x).toLowerCase()] || x}</span>`).join("") : `<span class="rolechip">—</span>`);
+
+  const aramBlock = c.aram ? `
+    <div class="aram-row">
+      <div class="aram-big t-${c.aram}">${c.aram}</div>
+      <div class="desc">大乱斗强度 ${c.aram} 级<small>${TIER_DESC[c.aram]}</small></div>
+    </div>` : `<div class="nodata">暂无大乱斗评级</div>`;
+
+  const tagsBlock = c.tags.length ? `
+    <div class="sec-title"><span class="em">🏷️</span> 阵容特质</div>
+    <div class="tagwrap">${c.tags.map(t => {
+      const m = LOL_DATA.TAG_META[t];
+      return `<span class="tagpill" title="${m ? m.desc : ""}">${m ? m.label : t}</span>`;
+    }).join("")}</div>` : "";
+
+  let counterBlock;
+  if (c.hasData && (c.strong.length || c.weak.length)) {
+    counterBlock = `
+      <div class="sec-title"><span class="em">⚔️</span> TA 克制（打这些英雄强势）</div>
+      <div class="cnt-list">${c.strong.length ? c.strong.map(chipHTML).join("") : '<span class="nodata">—</span>'}</div>
+      <div class="sec-title"><span class="em">🛡️</span> 谁克制 TA（容易被针对）</div>
+      <div class="cnt-list">${c.weak.length ? c.weak.map(chipHTML).join("") : '<span class="nodata">—</span>'}</div>`;
+  } else {
+    counterBlock = `<div class="sec-title"><span class="em">⚔️</span> 克制关系</div>
+      <div class="nodata">该英雄克制数据完善中（当前优先覆盖主流对位英雄）。</div>`;
+  }
+
+  const dt = dmgType(c);
+  $("modal").innerHTML = `
+    <div class="modal-head with-splash">
+      <div class="head-splash" id="mSplash"></div>
+      <img class="head-portrait" src="${imgUrl(c.id)}" alt="${c.cn}">
+      <div class="head-info">
+        <h2>${c.cn}</h2>
+        <div class="en2">${c.en}${c.title ? " · " + c.title : ""}</div>
+        ${c.aliases.length ? `<div class="aka">外号：${c.aliases.join(" / ")}</div>` : ""}
+        <div class="roles">${roles}
+          <span class="rolechip dmg-${dt}">${DMG_LABEL[dt]}</span>
+          <span class="rolechip">难度·${DIFF_LABEL[diffBand(c)]}</span>
+          ${c.rank ? `<span class="rolechip rk t-${c.rank}">排位 ${c.rank}</span>` : ""}
+          ${c.aram ? `<span class="rolechip rk t-${c.aram}">大乱斗 ${c.aram}</span>` : ""}
+        </div>
+      </div>
+      <button class="close" id="mClose">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="sec-title"><span class="em">📊</span> 面板 / 难度</div>
+      ${statsHTML(c)}
+      <div class="sec-title"><span class="em">✨</span> 技能</div>
+      <div id="mSkills"><div class="nodata">技能加载中…</div></div>
+      <div class="sec-title"><span class="em">❄️</span> 海克斯大乱斗</div>
+      ${aramBlock}
+      <div class="sec-title"><span class="em">🔮</span> 大乱斗推荐符文</div>
+      ${runeRecoHTML(c) || '<div class="nodata">符文数据加载中，请稍候…</div>'}
+      <div class="sec-title"><span class="em">🔷</span> 适合的海克斯强化</div>
+      ${augRecoHTML(c) || '<div class="nodata">海克斯强化数据加载中或暂不可用。</div>'}
+      ${counterBlock}
+      ${tagsBlock}
+      <div id="mSkins"></div>
+    </div>`;
+  $("modalBg").classList.add("show");
+  $("modalBg").scrollTop = 0;
+  curDetailId = id;
+  $("mClose").onclick = closeDetail;
+  $("modal").querySelectorAll(".cnt-chip[data-id]").forEach(ch =>
+    ch.onclick = () => openDetail(ch.dataset.id));
+  loadChampDetail(id).then(d => {
+    if (curDetailId !== id || !d) return;
+    const sk = $("mSkills"); if (sk) sk.innerHTML = skillsHTML(d);
+    const sm = $("mSkins"); if (sm) sm.innerHTML = skinsHTML(d);
+    const bs = $("mBase"); if (bs) bs.innerHTML = baseStatsHTML(d.hero);
+    const base = d.skins && d.skins[0];
+    const sp = $("mSplash"); if (sp && base && base.mainImg) sp.style.backgroundImage = `url('${base.mainImg}')`;
+  });
+}
+let curDetailId = null;
+function closeDetail() { $("modalBg").classList.remove("show"); }
+$("modalBg").addEventListener("click", e => { if (e.target.id === "modalBg") closeDetail(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") { closeDetail(); closePicker(); } });
+
+// ============================================================
+//  选人弹窗（大乱斗 / 排位 共用）
+// ============================================================
+let pickerCb = null, pickerRoleFilter = null;
+function openPicker(title, roleFilter, cb) {
+  pickerCb = cb; pickerRoleFilter = roleFilter;
+  $("pickerTitle").textContent = title;
+  $("pickerSearch").value = "";
+  renderPicker("");
+  $("pickerBg").classList.add("show");
+  setTimeout(() => $("pickerSearch").focus(), 50);
+}
+function renderPicker(q) {
+  const used = new Set([...aramTeams[0], ...aramTeams[1]].filter(Boolean));
+  // 排位用各自的占用集合在选的时候排除，这里只排当前模式
+  const list = CHAMPS.filter(c => matchSearch(c, q) &&
+    (!pickerRoleFilter || pickerRoleFilter === "all" || c.roles.length === 0 || c.roles.includes(pickerRoleFilter)));
+  $("pickerGrid").innerHTML = list.map(c => champCardHTML(c, true)).join("");
+  $("pickerGrid").querySelectorAll(".champ").forEach(card =>
+    card.onclick = () => { const cb = pickerCb; closePicker(); cb && cb(card.dataset.id); });
+}
+function closePicker() { $("pickerBg").classList.remove("show"); pickerCb = null; }
+$("pickerClose").onclick = closePicker;
+$("pickerBg").addEventListener("click", e => { if (e.target.id === "pickerBg") closePicker(); });
+$("pickerSearch").addEventListener("input", e => renderPicker(e.target.value.trim()));
+
+// ============================================================
+//  阵容评分 & 对比
+// ============================================================
+function teamScores(ids) {
+  const dims = {}; CMP_DIMS.forEach(d => dims[d] = 0);
+  let tierSum = 0, tierN = 0;
+  ids.filter(Boolean).forEach(id => {
+    const c = byId[id];
+    if (!c) return;
+    (c.tags || []).forEach(t => { if (dims[t] !== undefined) dims[t]++; });
+    if (c.aram && TIER_VAL[c.aram]) { tierSum += TIER_VAL[c.aram]; tierN++; }
+  });
+  return { dims, aramAvg: tierN ? tierSum / tierN : 0, count: ids.filter(Boolean).length };
+}
+
+function renderCompare(container, aIds, bIds, mode) {
+  const a = teamScores(aIds), b = teamScores(bIds);
+  if (a.count === 0 && b.count === 0) { container.innerHTML = ""; return; }
+  const maxPer = 5;
+  const rows = CMP_DIMS.map(d => {
+    const m = LOL_DATA.TAG_META[d];
+    const av = a.dims[d], bv = b.dims[d];
+    const aw = Math.min(100, av / maxPer * 100), bw = Math.min(100, bv / maxPer * 100);
+    return `<div class="cmp-row">
+      <div style="display:flex;justify-content:flex-end;align-items:center;gap:6px">
+        <span class="cmp-val" style="text-align:right">${av}</span>
+        <div class="cmp-bar left" style="flex:1"><i style="width:${aw}%"></i></div>
+      </div>
+      <div class="cmp-label">${m ? m.label : d}</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <div class="cmp-bar right" style="flex:1"><i style="width:${bw}%"></i></div>
+        <span class="cmp-val">${bv}</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  container.innerHTML = `
+    <div class="compare">
+      <h3>⚖️ 阵容强项对比　<span style="color:var(--blue-team)">蓝队</span> vs <span style="color:var(--red-team)">红队</span></h3>
+      ${rows}
+      ${verdictHTML(a, b, mode)}
+    </div>`;
+}
+
+function verdictHTML(a, b, mode) {
+  const lines = [];
+  const name = (s) => s === "blue" ? '<b class="blue">蓝队</b>' : '<b class="red">红队</b>';
+  // 大乱斗：强调评级均值
+  if (mode === "aram" && a.count && b.count) {
+    const letter = v => (["", "D", "C", "B", "A", "S"][Math.round(v)] || "-");
+    const diff = a.aramAvg - b.aramAvg;
+    let s;
+    if (Math.abs(diff) < 0.35) s = `两队大乱斗综合强度接近（蓝 ${letter(a.aramAvg)} / 红 ${letter(b.aramAvg)}），拼操作和团战站位。`;
+    else s = `${name(diff > 0 ? "blue" : "red")} 大乱斗综合强度更高（蓝 ${letter(a.aramAvg)} / 红 ${letter(b.aramAvg)}），阵容天然占优。`;
+    lines.push(s);
+  }
+  // 维度领先
+  const leads = { blue: [], red: [] };
+  CMP_DIMS.forEach(d => {
+    const m = LOL_DATA.TAG_META[d].label;
+    if (a.dims[d] - b.dims[d] >= 2) leads.blue.push(m);
+    else if (b.dims[d] - a.dims[d] >= 2) leads.red.push(m);
+  });
+  if (leads.blue.length) lines.push(`${name("blue")} 明显更强的方向：<span class="tag">${leads.blue.join(" / ")}</span>`);
+  if (leads.red.length) lines.push(`${name("red")} 明显更强的方向：<span class="tag">${leads.red.join(" / ")}</span>`);
+
+  // 玩法建议
+  const tip = [];
+  if (a.dims.poke - b.dims.poke >= 2) tip.push("蓝队消耗强，红队需找机会强开近身");
+  if (b.dims.poke - a.dims.poke >= 2) tip.push("红队消耗强，蓝队需找机会强开近身");
+  if (a.dims.engage - b.dims.engage >= 2) tip.push("蓝队开团多，红队站位要分散、保留解控");
+  if (b.dims.engage - a.dims.engage >= 2) tip.push("红队开团多，蓝队站位要分散、保留解控");
+  if (tip.length) lines.push(`💡 ${tip.join("；")}。`);
+
+  if (!lines.length) return "";
+  return `<div class="verdict">${lines.map(l => `<div>${l}</div>`).join("")}</div>`;
+}
+
+// ============================================================
+//  海克斯大乱斗
+// ============================================================
+const aramTeams = [[null, null, null, null, null], [null, null, null, null, null]];
+
+function initAram() {
+  renderAram();
+  $("aramRoll").onclick = () => {
+    const pool = CHAMPS.map(c => c.id);
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0;[pool[i], pool[j]] = [pool[j], pool[i]]; }
+    const picked = pool.slice(0, 10);
+    aramTeams[0] = picked.slice(0, 5);
+    aramTeams[1] = picked.slice(5, 10);
+    renderAram();
+  };
+  $("aramClear").onclick = () => { aramTeams[0] = [null, null, null, null, null]; aramTeams[1] = [null, null, null, null, null]; renderAram(); };
+}
+
+function renderAram() {
+  const panel = (team, idx) => {
+    const sc = teamScores(aramTeams[idx]);
+    const letter = sc.aramAvg ? (["", "D", "C", "B", "A", "S"][Math.round(sc.aramAvg)] || "-") : "-";
+    const slots = aramTeams[idx].map((id, si) => {
+      if (!id) return `<div class="slot" data-team="${idx}" data-slot="${si}"><span class="pick">＋ 点击选择英雄</span></div>`;
+      const c = byId[id];
+      return `<div class="slot filled" data-team="${idx}" data-slot="${si}">
+        <img src="${imgUrl(id)}">
+        <div class="nm">${c.cn}<small>${c.en}</small></div>
+        ${c.aram ? `<span class="tier-s t-${c.aram}">${c.aram}</span>` : ""}
+        <span class="x" data-rm="${idx}:${si}">×</span></div>`;
+    }).join("");
+    return `<div class="teampanel ${idx === 0 ? "blue" : "red"}">
+      <div class="teamhead ${idx === 0 ? "blue" : "red"}"><h3>${idx === 0 ? "🔵 蓝队" : "🔴 红队"}</h3>
+        <span class="avg">大乱斗均值 ${letter}</span></div>
+      <div class="slots">${slots}</div></div>`;
+  };
+  $("aramTeams").innerHTML = panel(0, 0) + panel(1, 1);
+  bindTeamSlots($("aramTeams"), aramTeams, () => renderAram(), null, "大乱斗选人");
+  renderCompare($("aramCompare"), aramTeams[0], aramTeams[1], "aram");
+}
+
+// ============================================================
+//  排位 BP
+// ============================================================
+const RANK_ROLES = ["top", "jungle", "mid", "adc", "support"];
+const rankTeams = [[null, null, null, null, null], [null, null, null, null, null]];
+
+function initRanked() {
+  renderRanked();
+  $("rankClear").onclick = () => { rankTeams[0] = [null, null, null, null, null]; rankTeams[1] = [null, null, null, null, null]; renderRanked(); };
+}
+
+function counterHint(myId, enemyId) {
+  if (!myId || !enemyId) return "";
+  const me = byId[myId], en = byId[enemyId];
+  if (!me || !en) return "";
+  const beats = me.strong.some(n => { const r = resolveChamp(n); return r && r.id === enemyId; });
+  const loses = me.weak.some(n => { const r = resolveChamp(n); return r && r.id === enemyId; });
+  if (beats) return `<div class="counterhint">✓ 对位克制 ${en.cn}</div>`;
+  if (loses) return `<div class="counterhint bad">⚠ 被 ${en.cn} 克制</div>`;
+  return "";
+}
+
+function renderRanked() {
+  const panel = (idx) => {
+    const slots = rankTeams[idx].map((id, si) => {
+      const role = RANK_ROLES[si];
+      const enemyId = rankTeams[1 - idx][si];
+      if (!id) return `<div class="slot" data-team="${idx}" data-slot="${si}">
+        <span class="role">${ROLE_LABEL[role]}</span><span class="pick">＋ 选择英雄</span></div>`;
+      const c = byId[id];
+      return `<div class="slot filled" data-team="${idx}" data-slot="${si}">
+        <span class="role">${ROLE_LABEL[role]}</span>
+        <img src="${imgUrl(id)}">
+        <div class="nm">${c.cn}<small>${c.en}</small>${counterHint(id, enemyId)}</div>
+        <span class="x" data-rm="${idx}:${si}">×</span></div>`;
+    }).join("");
+    return `<div class="teampanel ${idx === 0 ? "blue" : "red"}">
+      <div class="teamhead ${idx === 0 ? "blue" : "red"}"><h3>${idx === 0 ? "🔵 蓝方" : "🔴 红方"}</h3></div>
+      <div class="slots">${slots}</div></div>`;
+  };
+  $("rankTeams").innerHTML = panel(0) + panel(1);
+  bindTeamSlots($("rankTeams"), rankTeams, () => renderRanked(), RANK_ROLES, "按分路选人");
+  renderCompare($("rankCompare"), rankTeams[0], rankTeams[1], "ranked");
+}
+
+// ============================================================
+//  槽位绑定（选人 / 移除）
+// ============================================================
+function bindTeamSlots(root, teams, rerender, roles, pickerTitle) {
+  root.querySelectorAll(".slot").forEach(slot => {
+    slot.onclick = (e) => {
+      if (e.target.dataset.rm) {
+        const [t, s] = e.target.dataset.rm.split(":").map(Number);
+        teams[t][s] = null; rerender(); return;
+      }
+      if (slot.classList.contains("filled")) {
+        const id = teams[+slot.dataset.team][+slot.dataset.slot];
+        if (id) openDetail(id);
+        return;
+      }
+      const t = +slot.dataset.team, s = +slot.dataset.slot;
+      const roleFilter = roles ? roles[s] : null;
+      const title = roles ? `${pickerTitle} · ${ROLE_LABEL[roles[s]]}` : pickerTitle;
+      openPicker(title, roleFilter, (id) => {
+        // 避免同队重复
+        if (teams[t].includes(id)) teams[t][teams[t].indexOf(id)] = null;
+        teams[t][s] = id; rerender();
+      });
+    };
+  });
+}
+
+// ---------- 启动 ----------
+document.querySelector("main").insertAdjacentHTML("beforeend",
+  `<div class="notice">英雄数据与头像来自 Riot 官方 Data Dragon（League of Legends 版权归 Riot Games）。
+   克制关系与大乱斗评级为人工整理，仅供参考，不代表官方数据，可能随版本变化。本工具不隶属于 Riot Games。</div>`);
+$("libGrid").innerHTML = `<div class="loading"><div class="spinner"></div>正在从官方服务器加载英雄数据…</div>`;
+boot();
+
+</script>
+</body>
+</html>
